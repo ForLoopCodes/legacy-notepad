@@ -1,10 +1,14 @@
 # Legacy Notepad
 
-A lightweight, fast, Windows notpad alternative built with C++ and Win32 API which I made because microsoft wont stop adding AI bloatware to notepad.exe.
+A lightweight, 50x fast, Windows notpad alternative built with C++ and Win32 API which I made because microsoft wont stop adding AI bloatware to notepad.exe.
+
+<img width="752" height="242" alt="image" src="https://github.com/user-attachments/assets/bca18796-b088-4488-a445-649a549ddace" />
+<img width="738" height="243" alt="image" src="https://github.com/user-attachments/assets/e9ba9361-d1ea-41ee-a18d-f38fb9bdb546" />
+
 
 ## Features
 
-- **Fast & Lightweight** - Minimal memory footprint
+- **Fast & Lightweight** - 50x less memory consumption than real notepad.
 - **Multiple Encodings** - UTF-8, UTF-8 BOM, UTF-16 LE, UTF-16 BE, ANSI
 - **Customization**
   - Font selection and size adjustment
