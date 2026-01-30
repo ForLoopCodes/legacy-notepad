@@ -1,10 +1,3 @@
-#ifndef UNICODE
-#define UNICODE
-#endif
-#ifndef _UNICODE
-#define _UNICODE
-#endif
-
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
@@ -16,13 +9,6 @@
 #include <vector>
 #include <deque>
 #include <algorithm>
-
-#pragma comment(lib, "comctl32.lib")
-#pragma comment(lib, "shlwapi.lib")
-#pragma comment(lib, "comdlg32.lib")
-#pragma comment(lib, "shell32.lib")
-#pragma comment(lib, "gdiplus.lib")
-#pragma comment(lib, "msimg32.lib")
 
 #include <gdiplus.h>
 
