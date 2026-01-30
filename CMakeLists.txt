@@ -43,7 +43,7 @@ target_link_libraries(legacy-notepad PRIVATE
 )
 
 if(NOT MSVC)
-    target_link_options(legacy-notepad PRIVATE -mwindows -municode)
+    target_link_options(legacy-notepad PRIVATE -mwindows -municode -static)
     target_link_libraries(legacy-notepad PRIVATE -static-libgcc -static-libstdc++)
     add_custom_command(TARGET legacy-notepad POST_BUILD COMMAND ${CMAKE_STRIP} --strip-all $<TARGET_FILE:legacy-notepad>)
 endif()
