@@ -409,21 +409,58 @@ void UpdateStatus()
 
 void SetupStatusBarParts()
 {
-  RECT rc;
-  GetClientRect(g_hwndMain, &rc);
-  int w = rc.right;
-  int parts[] = {w - 240, w - 180, w - 80, -1};
-  SendMessageW(g_hwndStatus, SB_SETPARTS, 4, reinterpret_cast<LPARAM>(parts));
+    RECT rc;
+    GetClientRect(g_hwndMain, &rc);
+
+    HDC hdc = GetDC(g_hwndStatus);
+    HFONT hFont = (HFONT)SendMessageW(g_hwndStatus, WM_GETFONT, 0, 0);
+    HFONT old = (HFONT)SelectObject(hdc, hFont ? hFont : (HFONT)GetStockObject(DEFAULT_GUI_FONT));
+
+    auto textW = [&](const wchar_t* s) {
+        SIZE sz{};
+        GetTextExtentPoint32W(hdc, s, (int)wcslen(s), &sz);
+        return sz.cx + 24; // padding
+        };
+
+    int wZoom = textW(L" 500% ");
+    int wLE = textW(L" Windows (CRLF) ");
+    int wEnc = textW(L" UTF-8 with BOM ");
+
+    SelectObject(hdc, old);
+    ReleaseDC(g_hwndStatus, hdc);
+
+    int w = rc.right;
+    int parts[4];
+    parts[0] = w - (wEnc + wLE + wZoom);
+    parts[1] = w - (wLE + wZoom);
+    parts[2] = w - wZoom;
+    parts[3] = -1;
+
+    SendMessageW(g_hwndStatus, SB_SETPARTS, 4, (LPARAM)parts);
 }
 
 void ResizeControls()
 {
-  RECT rc;
-  GetClientRect(g_hwndMain, &rc);
-  int statusH = g_state.showStatusBar ? 22 : 0;
-  MoveWindow(g_hwndEditor, 0, 0, rc.right, rc.bottom - statusH, TRUE);
-  SendMessageW(g_hwndStatus, WM_SIZE, 0, 0);
-  SetupStatusBarParts();
+    RECT rc;
+    GetClientRect(g_hwndMain, &rc);
+
+    int statusH = 0;
+    if (g_state.showStatusBar)
+    {
+        ShowWindow(g_hwndStatus, SW_SHOW);
+        SendMessageW(g_hwndStatus, WM_SIZE, 0, 0);
+
+        RECT rs;
+        GetWindowRect(g_hwndStatus, &rs);
+        statusH = rs.bottom - rs.top;
+    }
+    else
+    {
+        ShowWindow(g_hwndStatus, SW_HIDE);
+    }
+
+    MoveWindow(g_hwndEditor, 0, 0, rc.right, rc.bottom - statusH, TRUE);
+    SetupStatusBarParts();
 }
 
 void ApplyFont()
@@ -1891,6 +1928,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdShow)
 {
+  SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
   Gdiplus::GdiplusStartupInput gdiplusStartupInput;
   Gdiplus::GdiplusStartup(&g_gdiplusToken, &gdiplusStartupInput, nullptr);
   INITCOMMONCONTROLSEX icc = {sizeof(icc), ICC_BAR_CLASSES};
