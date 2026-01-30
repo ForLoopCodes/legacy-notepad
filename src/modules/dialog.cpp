@@ -359,5 +359,5 @@ void ViewTransparency()
 
 void HelpAbout()
 {
-    MessageBoxW(g_hwndMain, L"Legacy Notepad v1.0.0\n\nA fast, lightweight text editor.\n\nBuilt with C++ and Win32 API.", L"About Notepad", MB_ICONINFORMATION);
+    MessageBoxW(g_hwndMain, L"Legacy Notepad v1.1.0\n\nA fast, lightweight text editor.\n\nBuilt with C++ and Win32 API.", L"About Notepad", MB_ICONINFORMATION);
 }
