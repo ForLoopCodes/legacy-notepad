@@ -28,6 +28,8 @@ target_link_libraries(legacy-notepad PRIVATE
     user32
     gdi32
     kernel32
+    dwmapi
+    uxtheme
 )
 
 if(NOT MSVC)

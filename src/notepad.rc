@@ -48,6 +48,7 @@ BEGIN
         MENUITEM "&Restore Default Zoom\tCtrl+0", IDM_VIEW_ZOOMDEFAULT
         MENUITEM SEPARATOR
         MENUITEM "&Status Bar", IDM_VIEW_STATUSBAR, CHECKED
+        MENUITEM "&Dark Mode", IDM_VIEW_DARKMODE
         MENUITEM SEPARATOR
         POPUP "&Background"
         BEGIN

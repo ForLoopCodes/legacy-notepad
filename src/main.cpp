@@ -11,6 +11,8 @@
 #include <algorithm>
 
 #include <gdiplus.h>
+#include <dwmapi.h>
+#include <uxtheme.h>
 
 #include "resource.h"
 
@@ -50,6 +52,12 @@ enum class BgPosition
   Fit,
   Fill
 };
+enum class Theme
+{
+  System,
+  Light,
+  Dark
+};
 
 struct BackgroundSettings
 {
@@ -70,6 +78,7 @@ struct AppState
   bool wordWrap = false;
   int zoomLevel = ZOOM_DEFAULT;
   bool showStatusBar = true;
+  Theme theme = Theme::System;
   int fontSize = 16;
   std::wstring fontName = L"Consolas";
   BYTE windowOpacity = 255;
@@ -86,10 +95,281 @@ HWND g_hwndFindDlg = nullptr;
 HACCEL g_hAccel = nullptr;
 AppState g_state;
 WNDPROC g_origEditorProc = nullptr;
+WNDPROC g_origStatusProc = nullptr;
 ULONG_PTR g_gdiplusToken = 0;
 Gdiplus::Image *g_bgImage = nullptr;
 HBITMAP g_bgBitmap = nullptr;
 int g_bgBitmapW = 0, g_bgBitmapH = 0;
+HBRUSH g_hbrStatusDark = nullptr;
+HBRUSH g_hbrMenuDark = nullptr;
+
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
+#define WM_UAHDRAWMENU 0x0091
+#define WM_UAHDRAWMENUITEM 0x0092
+
+typedef struct tagUAHMENUITEM
+{
+  int iPosition;
+  UINT32 dwFlags;
+  HMENU hMenu;
+  RECT rcItem;
+} UAHMENUITEM;
+
+typedef struct tagUAHMENU
+{
+  HMENU hMenu;
+  HDC hdc;
+  DWORD dwFlags;
+} UAHMENU;
+
+typedef struct tagUAHDRAWMENUITEM
+{
+  DRAWITEMSTRUCT dis;
+  UAHMENU um;
+  UAHMENUITEM umi;
+} UAHDRAWMENUITEM;
+
+typedef enum PreferredAppMode
+{
+  Default,
+  AllowDark,
+  ForceDark,
+  ForceLight,
+  Max
+} PreferredAppMode;
+
+typedef BOOL(WINAPI *fnAllowDarkModeForWindow)(HWND hWnd, BOOL allow);
+typedef PreferredAppMode(WINAPI *fnSetPreferredAppMode)(PreferredAppMode appMode);
+typedef void(WINAPI *fnFlushMenuThemes)();
+
+bool SetTitleBarDark(HWND hwnd, BOOL dark)
+{
+  const DWORD attrs[] = {DWMWA_USE_IMMERSIVE_DARK_MODE, 19};
+  bool applied = false;
+  for (DWORD attr : attrs)
+  {
+    if (SUCCEEDED(DwmSetWindowAttribute(hwnd, attr, &dark, sizeof(dark))))
+    {
+      applied = true;
+    }
+  }
+  return applied;
+}
+
+bool IsDarkMode()
+{
+  if (g_state.theme == Theme::Dark)
+    return true;
+  if (g_state.theme == Theme::Light)
+    return false;
+
+  HKEY hKey;
+  if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+  {
+    DWORD value = 1;
+    DWORD size = sizeof(value);
+    if (RegQueryValueExW(hKey, L"AppsUseLightTheme", nullptr, nullptr, reinterpret_cast<LPBYTE>(&value), &size) == ERROR_SUCCESS)
+    {
+      RegCloseKey(hKey);
+      return value == 0;
+    }
+    RegCloseKey(hKey);
+  }
+  return false;
+}
+
+LRESULT CALLBACK StatusSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+  if (IsDarkMode())
+  {
+    if (msg == WM_ERASEBKGND)
+    {
+      HDC hdc = reinterpret_cast<HDC>(wParam);
+      RECT rc;
+      GetClientRect(hwnd, &rc);
+      HBRUSH hbr = g_hbrStatusDark ? g_hbrStatusDark : CreateSolidBrush(RGB(45, 45, 45));
+      FillRect(hdc, &rc, hbr);
+      if (!g_hbrStatusDark)
+        DeleteObject(hbr);
+      return 1;
+    }
+    if (msg == WM_PAINT)
+    {
+      PAINTSTRUCT ps;
+      HDC hdc = BeginPaint(hwnd, &ps);
+
+      RECT rc;
+      GetClientRect(hwnd, &rc);
+
+      HBRUSH hbr = g_hbrStatusDark ? g_hbrStatusDark : CreateSolidBrush(RGB(45, 45, 45));
+      FillRect(hdc, &rc, hbr);
+      if (!g_hbrStatusDark)
+        DeleteObject(hbr);
+
+      NONCLIENTMETRICSW ncm = {sizeof(ncm)};
+      SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+      HFONT hFont = CreateFontIndirectW(&ncm.lfStatusFont);
+      HFONT hOldFont = reinterpret_cast<HFONT>(SelectObject(hdc, hFont));
+
+      SetBkMode(hdc, TRANSPARENT);
+      SetTextColor(hdc, RGB(255, 255, 255));
+
+      int parts[4];
+      int partCount = static_cast<int>(SendMessageW(hwnd, SB_GETPARTS, 4, reinterpret_cast<LPARAM>(parts)));
+
+      int left = 4;
+      for (int i = 0; i < partCount && i < 4; i++)
+      {
+        RECT rcPart;
+        rcPart.left = left;
+        rcPart.top = rc.top + 2;
+        rcPart.right = (parts[i] == -1) ? rc.right : parts[i];
+        rcPart.bottom = rc.bottom - 2;
+
+        wchar_t szText[256] = {};
+        SendMessageW(hwnd, SB_GETTEXTW, i, reinterpret_cast<LPARAM>(szText));
+
+        if (szText[0] != L'\0')
+        {
+          DrawTextW(hdc, szText, -1, &rcPart, DT_SINGLELINE | DT_VCENTER | DT_LEFT | DT_END_ELLIPSIS);
+        }
+
+        left = rcPart.right + 2;
+      }
+
+      SelectObject(hdc, hOldFont);
+      DeleteObject(hFont);
+
+      EndPaint(hwnd, &ps);
+      return 0;
+    }
+  }
+  return CallWindowProcW(g_origStatusProc, hwnd, msg, wParam, lParam);
+}
+
+void ApplyTheme()
+{
+  BOOL dark = IsDarkMode();
+
+  HMODULE hUxtheme = GetModuleHandleW(L"uxtheme.dll");
+  if (hUxtheme)
+  {
+    typedef void(WINAPI * fnAllowDarkModeForApp)(BOOL allow);
+    fnAllowDarkModeForApp allowDarkModeForApp = (fnAllowDarkModeForApp)(void *)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(132));
+    if (allowDarkModeForApp)
+    {
+      allowDarkModeForApp(dark);
+    }
+
+    fnSetPreferredAppMode setPreferredAppMode = (fnSetPreferredAppMode)(void *)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(135));
+    if (setPreferredAppMode)
+    {
+      setPreferredAppMode(dark ? ForceDark : ForceLight);
+    }
+
+    typedef void(WINAPI * fnRefreshImmersiveColorPolicyState)();
+    fnRefreshImmersiveColorPolicyState refreshPolicy = (fnRefreshImmersiveColorPolicyState)(void *)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(104));
+    if (refreshPolicy)
+    {
+      refreshPolicy();
+    }
+
+    fnAllowDarkModeForWindow allowDarkModeForWindow = (fnAllowDarkModeForWindow)(void *)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(133));
+    if (allowDarkModeForWindow)
+    {
+      allowDarkModeForWindow(g_hwndMain, dark);
+      allowDarkModeForWindow(g_hwndStatus, dark);
+      allowDarkModeForWindow(g_hwndEditor, dark);
+    }
+
+    fnFlushMenuThemes flushMenuThemes = (fnFlushMenuThemes)(void *)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(136));
+    if (flushMenuThemes)
+    {
+      flushMenuThemes();
+    }
+  }
+
+  if (dark)
+  {
+    if (!g_hbrStatusDark)
+      g_hbrStatusDark = CreateSolidBrush(RGB(45, 45, 45));
+    if (!g_hbrMenuDark)
+      g_hbrMenuDark = CreateSolidBrush(RGB(45, 45, 45));
+  }
+  else
+  {
+    if (g_hbrStatusDark)
+    {
+      DeleteObject(g_hbrStatusDark);
+      g_hbrStatusDark = nullptr;
+    }
+    if (g_hbrMenuDark)
+    {
+      DeleteObject(g_hbrMenuDark);
+      g_hbrMenuDark = nullptr;
+    }
+  }
+
+  SetTitleBarDark(g_hwndMain, dark);
+
+  if (dark)
+  {
+    SetWindowTheme(g_hwndEditor, L"DarkMode_Explorer", nullptr);
+    SetWindowTheme(g_hwndStatus, L"DarkMode_Explorer", nullptr);
+    SetWindowTheme(g_hwndMain, L"DarkMode_Explorer", nullptr);
+  }
+  else
+  {
+    SetWindowTheme(g_hwndEditor, nullptr, nullptr);
+    SetWindowTheme(g_hwndStatus, nullptr, nullptr);
+    SetWindowTheme(g_hwndMain, nullptr, nullptr);
+  }
+
+  COLORREF bgColor, textColor;
+  if (dark)
+  {
+    bgColor = RGB(30, 30, 30);
+    textColor = RGB(255, 255, 255);
+  }
+  else
+  {
+    bgColor = GetSysColor(COLOR_WINDOW);
+    textColor = GetSysColor(COLOR_WINDOWTEXT);
+  }
+
+  SendMessageW(g_hwndEditor, EM_SETBKGNDCOLOR, 0, bgColor);
+  CHARFORMAT2W cf = {};
+  cf.cbSize = sizeof(cf);
+  cf.dwMask = CFM_COLOR;
+  cf.crTextColor = textColor;
+  SendMessageW(g_hwndEditor, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&cf));
+  SendMessageW(g_hwndEditor, EM_SETCHARFORMAT, SCF_DEFAULT, reinterpret_cast<LPARAM>(&cf));
+
+  if (dark)
+    SendMessageW(g_hwndStatus, SB_SETBKCOLOR, 0, RGB(45, 45, 45));
+  else
+    SendMessageW(g_hwndStatus, SB_SETBKCOLOR, 0, CLR_DEFAULT);
+
+  HMENU hMenu = GetMenu(g_hwndMain);
+  CheckMenuItem(hMenu, IDM_VIEW_DARKMODE, MF_BYCOMMAND | (dark ? MF_CHECKED : MF_UNCHECKED));
+
+  InvalidateRect(g_hwndEditor, nullptr, TRUE);
+  InvalidateRect(g_hwndStatus, nullptr, TRUE);
+  InvalidateRect(g_hwndMain, nullptr, TRUE);
+  DrawMenuBar(g_hwndMain);
+}
+
+void ViewDarkMode()
+{
+  if (IsDarkMode())
+    g_state.theme = Theme::Light;
+  else
+    g_state.theme = Theme::Dark;
+  ApplyTheme();
+}
 
 void UpdateTitle();
 void UpdateStatus();
@@ -122,6 +402,7 @@ void ViewZoomIn();
 void ViewZoomOut();
 void ViewZoomDefault();
 void ViewStatusBar();
+void ViewDarkMode();
 void ViewTransparency();
 void ViewSelectBackground();
 void ViewClearBackground();
@@ -389,6 +670,8 @@ void UpdateTitle()
   SetWindowTextW(g_hwndMain, title.c_str());
 }
 
+std::wstring g_statusTexts[4];
+
 void UpdateStatus()
 {
   if (!g_state.showStatusBar)
@@ -400,67 +683,74 @@ void UpdateStatus()
   auto [line, col] = GetCursorPos();
   wchar_t buf[256];
   wsprintfW(buf, L" Ln %d, Col %d ", line, col);
-  SendMessageW(g_hwndStatus, SB_SETTEXTW, 0, reinterpret_cast<LPARAM>(buf));
-  SendMessageW(g_hwndStatus, SB_SETTEXTW, 1, reinterpret_cast<LPARAM>(GetEncodingName(g_state.encoding)));
-  SendMessageW(g_hwndStatus, SB_SETTEXTW, 2, reinterpret_cast<LPARAM>(GetLineEndingName(g_state.lineEnding)));
+  g_statusTexts[0] = buf;
+  g_statusTexts[1] = GetEncodingName(g_state.encoding);
+  g_statusTexts[2] = GetLineEndingName(g_state.lineEnding);
   wsprintfW(buf, L" %d%% ", g_state.zoomLevel);
-  SendMessageW(g_hwndStatus, SB_SETTEXTW, 3, reinterpret_cast<LPARAM>(buf));
+  g_statusTexts[3] = buf;
+
+  for (int i = 0; i < 4; i++)
+  {
+    SendMessageW(g_hwndStatus, SB_SETTEXTW, i | SBT_NOBORDERS, reinterpret_cast<LPARAM>(g_statusTexts[i].c_str()));
+  }
+  InvalidateRect(g_hwndStatus, nullptr, TRUE);
 }
 
 void SetupStatusBarParts()
 {
-    RECT rc;
-    GetClientRect(g_hwndMain, &rc);
+  RECT rc;
+  GetClientRect(g_hwndMain, &rc);
 
-    HDC hdc = GetDC(g_hwndStatus);
-    HFONT hFont = (HFONT)SendMessageW(g_hwndStatus, WM_GETFONT, 0, 0);
-    HFONT old = (HFONT)SelectObject(hdc, hFont ? hFont : (HFONT)GetStockObject(DEFAULT_GUI_FONT));
+  HDC hdc = GetDC(g_hwndStatus);
+  HFONT hFont = (HFONT)SendMessageW(g_hwndStatus, WM_GETFONT, 0, 0);
+  HFONT old = (HFONT)SelectObject(hdc, hFont ? hFont : (HFONT)GetStockObject(DEFAULT_GUI_FONT));
 
-    auto textW = [&](const wchar_t* s) {
-        SIZE sz{};
-        GetTextExtentPoint32W(hdc, s, (int)wcslen(s), &sz);
-        return sz.cx + 24; // padding
-        };
+  auto textW = [&](const wchar_t *s)
+  {
+    SIZE sz{};
+    GetTextExtentPoint32W(hdc, s, (int)wcslen(s), &sz);
+    return sz.cx + 24;
+  };
 
-    int wZoom = textW(L" 500% ");
-    int wLE = textW(L" Windows (CRLF) ");
-    int wEnc = textW(L" UTF-8 with BOM ");
+  int wZoom = textW(L" 500% ");
+  int wLE = textW(L" Windows (CRLF) ");
+  int wEnc = textW(L" UTF-8 with BOM ");
 
-    SelectObject(hdc, old);
-    ReleaseDC(g_hwndStatus, hdc);
+  SelectObject(hdc, old);
+  ReleaseDC(g_hwndStatus, hdc);
 
-    int w = rc.right;
-    int parts[4];
-    parts[0] = w - (wEnc + wLE + wZoom);
-    parts[1] = w - (wLE + wZoom);
-    parts[2] = w - wZoom;
-    parts[3] = -1;
+  int w = rc.right;
+  int parts[4];
+  parts[0] = w - (wEnc + wLE + wZoom);
+  parts[1] = w - (wLE + wZoom);
+  parts[2] = w - wZoom;
+  parts[3] = -1;
 
-    SendMessageW(g_hwndStatus, SB_SETPARTS, 4, (LPARAM)parts);
+  SendMessageW(g_hwndStatus, SB_SETPARTS, 4, (LPARAM)parts);
 }
 
 void ResizeControls()
 {
-    RECT rc;
-    GetClientRect(g_hwndMain, &rc);
+  RECT rc;
+  GetClientRect(g_hwndMain, &rc);
 
-    int statusH = 0;
-    if (g_state.showStatusBar)
-    {
-        ShowWindow(g_hwndStatus, SW_SHOW);
-        SendMessageW(g_hwndStatus, WM_SIZE, 0, 0);
+  int statusH = 0;
+  if (g_state.showStatusBar)
+  {
+    ShowWindow(g_hwndStatus, SW_SHOW);
+    SendMessageW(g_hwndStatus, WM_SIZE, 0, 0);
 
-        RECT rs;
-        GetWindowRect(g_hwndStatus, &rs);
-        statusH = rs.bottom - rs.top;
-    }
-    else
-    {
-        ShowWindow(g_hwndStatus, SW_HIDE);
-    }
+    RECT rs;
+    GetWindowRect(g_hwndStatus, &rs);
+    statusH = rs.bottom - rs.top;
+  }
+  else
+  {
+    ShowWindow(g_hwndStatus, SW_HIDE);
+  }
 
-    MoveWindow(g_hwndEditor, 0, 0, rc.right, rc.bottom - statusH, TRUE);
-    SetupStatusBarParts();
+  MoveWindow(g_hwndEditor, 0, 0, rc.right, rc.bottom - statusH, TRUE);
+  SetupStatusBarParts();
 }
 
 void ApplyFont()
@@ -1582,7 +1872,14 @@ void UpdateBackgroundBitmap(HWND hwnd)
   g_bgBitmapW = w;
   g_bgBitmapH = h;
   HBITMAP hOldBmp = reinterpret_cast<HBITMAP>(SelectObject(hdcMem, g_bgBitmap));
-  HBRUSH hBrush = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
+
+  COLORREF bgColor;
+  if (IsDarkMode())
+    bgColor = RGB(30, 30, 30);
+  else
+    bgColor = GetSysColor(COLOR_WINDOW);
+
+  HBRUSH hBrush = CreateSolidBrush(bgColor);
   FillRect(hdcMem, &rc, hBrush);
   DeleteObject(hBrush);
   PaintBackground(hdcMem, rc);
@@ -1670,6 +1967,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
   {
   case WM_CREATE:
   {
+    g_hwndMain = hwnd;
     DragAcceptFiles(hwnd, TRUE);
     LoadLibraryW(L"Msftedit.dll");
     g_hwndEditor = CreateWindowExW(0, MSFTEDIT_CLASS, nullptr,
@@ -1678,13 +1976,140 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     g_origEditorProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_hwndEditor, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(EditorSubclassProc)));
     g_hwndStatus = CreateWindowExW(0, STATUSCLASSNAMEW, nullptr,
                                    WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDC_STATUSBAR), GetModuleHandleW(nullptr), nullptr);
+    g_origStatusProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_hwndStatus, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(StatusSubclassProc)));
     SendMessageW(g_hwndEditor, EM_SETLIMITTEXT, 0, 0);
     SendMessageW(g_hwndEditor, EM_SETEVENTMASK, 0, ENM_CHANGE);
     ApplyFont();
     SetupStatusBarParts();
     UpdateTitle();
     UpdateStatus();
+    ApplyTheme();
     SetFocus(g_hwndEditor);
+    return 0;
+  }
+  case WM_UAHDRAWMENU:
+  {
+    if (IsDarkMode())
+    {
+      UAHMENU *pUDM = reinterpret_cast<UAHMENU *>(lParam);
+      MENUBARINFO mbi = {sizeof(mbi)};
+      if (GetMenuBarInfo(hwnd, OBJID_MENU, 0, &mbi))
+      {
+        RECT rcWindow;
+        GetWindowRect(hwnd, &rcWindow);
+        RECT rcMenuBar = mbi.rcBar;
+        OffsetRect(&rcMenuBar, -rcWindow.left, -rcWindow.top);
+        FillRect(pUDM->hdc, &rcMenuBar, g_hbrMenuDark ? g_hbrMenuDark : reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+      }
+      return TRUE;
+    }
+    break;
+  }
+  case WM_UAHDRAWMENUITEM:
+  {
+    if (IsDarkMode())
+    {
+      UAHDRAWMENUITEM *pUDMI = reinterpret_cast<UAHDRAWMENUITEM *>(lParam);
+
+      wchar_t szText[256] = {};
+      MENUITEMINFOW mii = {sizeof(mii)};
+      mii.fMask = MIIM_STRING;
+      mii.dwTypeData = szText;
+      mii.cch = 255;
+      GetMenuItemInfoW(pUDMI->um.hMenu, pUDMI->umi.iPosition, TRUE, &mii);
+
+      COLORREF bgColor = RGB(45, 45, 45);
+      COLORREF textColor = RGB(255, 255, 255);
+
+      bool isHot = (pUDMI->dis.itemState & ODS_HOTLIGHT) != 0;
+      bool isSelected = (pUDMI->dis.itemState & ODS_SELECTED) != 0;
+
+      if (isHot || isSelected)
+      {
+        bgColor = RGB(65, 65, 65);
+      }
+
+      HBRUSH hbr = CreateSolidBrush(bgColor);
+      FillRect(pUDMI->um.hdc, &pUDMI->dis.rcItem, hbr);
+      DeleteObject(hbr);
+
+      NONCLIENTMETRICSW ncm = {sizeof(ncm)};
+      SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+      HFONT hFont = CreateFontIndirectW(&ncm.lfMenuFont);
+      HFONT hOldFont = reinterpret_cast<HFONT>(SelectObject(pUDMI->um.hdc, hFont));
+
+      SetBkMode(pUDMI->um.hdc, TRANSPARENT);
+      SetTextColor(pUDMI->um.hdc, textColor);
+
+      RECT rcText = pUDMI->dis.rcItem;
+      DrawTextW(pUDMI->um.hdc, szText, -1, &rcText, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+
+      SelectObject(pUDMI->um.hdc, hOldFont);
+      DeleteObject(hFont);
+
+      return TRUE;
+    }
+    break;
+  }
+  case WM_NCPAINT:
+  case WM_NCACTIVATE:
+  {
+    LRESULT result = DefWindowProcW(hwnd, msg, wParam, lParam);
+
+    if (IsDarkMode())
+    {
+      HDC hdc = GetWindowDC(hwnd);
+      MENUBARINFO mbi = {sizeof(mbi)};
+      if (GetMenuBarInfo(hwnd, OBJID_MENU, 0, &mbi))
+      {
+        RECT rcWindow;
+        GetWindowRect(hwnd, &rcWindow);
+        RECT rcMenuBar = mbi.rcBar;
+        OffsetRect(&rcMenuBar, -rcWindow.left, -rcWindow.top);
+        rcMenuBar.bottom += 2;
+        FillRect(hdc, &rcMenuBar, g_hbrMenuDark ? g_hbrMenuDark : reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+
+        HMENU hMenu = GetMenu(hwnd);
+        int itemCount = GetMenuItemCount(hMenu);
+
+        NONCLIENTMETRICSW ncm = {sizeof(ncm)};
+        SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+        HFONT hFont = CreateFontIndirectW(&ncm.lfMenuFont);
+        HFONT hOldFont = reinterpret_cast<HFONT>(SelectObject(hdc, hFont));
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(255, 255, 255));
+
+        for (int i = 0; i < itemCount; i++)
+        {
+          RECT rcItem;
+          if (GetMenuBarInfo(hwnd, OBJID_MENU, i + 1, &mbi))
+          {
+            rcItem = mbi.rcBar;
+            OffsetRect(&rcItem, -rcWindow.left, -rcWindow.top);
+
+            wchar_t szText[256] = {};
+            MENUITEMINFOW mii = {sizeof(mii)};
+            mii.fMask = MIIM_STRING;
+            mii.dwTypeData = szText;
+            mii.cch = 255;
+            GetMenuItemInfoW(hMenu, i, TRUE, &mii);
+
+            DrawTextW(hdc, szText, -1, &rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
+          }
+        }
+        SelectObject(hdc, hOldFont);
+        DeleteObject(hFont);
+      }
+      ReleaseDC(hwnd, hdc);
+    }
+    return result;
+  }
+  case WM_SETTINGCHANGE:
+  {
+    if (lParam && wcscmp(reinterpret_cast<LPCWSTR>(lParam), L"ImmersiveColorSet") == 0)
+    {
+      ApplyTheme();
+    }
     return 0;
   }
   case WM_DROPFILES:
@@ -1716,6 +2141,39 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
       return reinterpret_cast<LRESULT>(GetStockObject(NULL_BRUSH));
     }
     break;
+  case WM_CTLCOLORSTATIC:
+    if (reinterpret_cast<HWND>(lParam) == g_hwndStatus && IsDarkMode())
+    {
+      HDC hdc = reinterpret_cast<HDC>(wParam);
+      SetTextColor(hdc, RGB(255, 255, 255));
+      SetBkColor(hdc, RGB(45, 45, 45));
+      return reinterpret_cast<LRESULT>(g_hbrStatusDark ? g_hbrStatusDark : GetStockObject(BLACK_BRUSH));
+    }
+    break;
+  case WM_DRAWITEM:
+  {
+    LPDRAWITEMSTRUCT pDIS = reinterpret_cast<LPDRAWITEMSTRUCT>(lParam);
+    if (pDIS->hwndItem == g_hwndStatus && IsDarkMode())
+    {
+      HBRUSH hbr = g_hbrStatusDark ? g_hbrStatusDark : CreateSolidBrush(RGB(45, 45, 45));
+      FillRect(pDIS->hDC, &pDIS->rcItem, hbr);
+      if (!g_hbrStatusDark)
+        DeleteObject(hbr);
+
+      SetBkMode(pDIS->hDC, TRANSPARENT);
+      SetTextColor(pDIS->hDC, RGB(255, 255, 255));
+
+      int part = static_cast<int>(pDIS->itemID);
+      if (part >= 0 && part < 4)
+      {
+        RECT rc = pDIS->rcItem;
+        rc.left += 4;
+        DrawTextW(pDIS->hDC, g_statusTexts[part].c_str(), -1, &rc, DT_SINGLELINE | DT_VCENTER | DT_LEFT | DT_END_ELLIPSIS);
+      }
+      return TRUE;
+    }
+    break;
+  }
   case WM_COMMAND:
   {
     WORD cmd = LOWORD(wParam);
@@ -1812,6 +2270,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     case IDM_VIEW_STATUSBAR:
       ViewStatusBar();
       break;
+    case IDM_VIEW_DARKMODE:
+      ViewDarkMode();
+      break;
     case IDM_VIEW_TRANSPARENCY:
       ViewTransparency();
       break;
@@ -1872,6 +2333,36 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
   case WM_NOTIFY:
   {
     NMHDR *pnmh = reinterpret_cast<NMHDR *>(lParam);
+    if (pnmh->hwndFrom == g_hwndStatus && pnmh->code == NM_CUSTOMDRAW)
+    {
+      if (IsDarkMode())
+      {
+        LPNMCUSTOMDRAW lpnmcd = reinterpret_cast<LPNMCUSTOMDRAW>(lParam);
+        if (lpnmcd->dwDrawStage == CDDS_PREPAINT)
+          return CDRF_NOTIFYITEMDRAW;
+        if (lpnmcd->dwDrawStage == CDDS_ITEMPREPAINT)
+        {
+          HBRUSH hbr = g_hbrStatusDark ? g_hbrStatusDark : CreateSolidBrush(RGB(45, 45, 45));
+          FillRect(lpnmcd->hdc, &lpnmcd->rc, hbr);
+          if (!g_hbrStatusDark && hbr)
+            DeleteObject(hbr);
+
+          SetBkMode(lpnmcd->hdc, TRANSPARENT);
+          SetBkColor(lpnmcd->hdc, RGB(45, 45, 45));
+          SetTextColor(lpnmcd->hdc, RGB(255, 255, 255));
+
+          wchar_t buf[256] = {};
+          int part = static_cast<int>(lpnmcd->dwItemSpec);
+          SendMessageW(g_hwndStatus, SB_GETTEXTW, part, reinterpret_cast<LPARAM>(buf));
+
+          RECT rc = lpnmcd->rc;
+          rc.left += 6;
+          DrawTextW(lpnmcd->hdc, buf, -1, &rc, DT_SINGLELINE | DT_VCENTER | DT_LEFT | DT_END_ELLIPSIS);
+
+          return CDRF_SKIPDEFAULT;
+        }
+      }
+    }
     if (pnmh->hwndFrom == g_hwndEditor && pnmh->code == EN_CHANGE)
     {
       g_state.modified = true;
@@ -1929,6 +2420,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdShow)
 {
   SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
+  HMODULE hUxtheme = LoadLibraryExW(L"uxtheme.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+  if (hUxtheme)
+  {
+    BOOL useDark = IsDarkMode();
+
+    typedef void(WINAPI * fnAllowDarkModeForApp)(BOOL allow);
+    fnAllowDarkModeForApp allowDarkModeForApp = (fnAllowDarkModeForApp)(void *)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(132));
+    if (allowDarkModeForApp)
+    {
+      allowDarkModeForApp(useDark);
+    }
+
+    fnSetPreferredAppMode setPreferredAppMode = (fnSetPreferredAppMode)(void *)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(135));
+    if (setPreferredAppMode)
+      setPreferredAppMode(useDark ? ForceDark : ForceLight);
+
+    typedef void(WINAPI * fnRefreshImmersiveColorPolicyState)();
+    fnRefreshImmersiveColorPolicyState refreshPolicy = (fnRefreshImmersiveColorPolicyState)(void *)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(104));
+    if (refreshPolicy)
+      refreshPolicy();
+
+    fnFlushMenuThemes flushMenuThemes = (fnFlushMenuThemes)(void *)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(136));
+    if (flushMenuThemes)
+      flushMenuThemes();
+  }
+
   Gdiplus::GdiplusStartupInput gdiplusStartupInput;
   Gdiplus::GdiplusStartup(&g_gdiplusToken, &gdiplusStartupInput, nullptr);
   INITCOMMONCONTROLSEX icc = {sizeof(icc), ICC_BAR_CLASSES};
@@ -1948,6 +2466,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdSh
                                WS_OVERLAPPEDWINDOW | WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
                                nullptr, nullptr, hInstance, nullptr);
   g_hAccel = LoadAcceleratorsW(hInstance, MAKEINTRESOURCEW(IDR_ACCEL));
+  SetTitleBarDark(g_hwndMain, IsDarkMode());
   ShowWindow(g_hwndMain, nCmdShow);
   UpdateWindow(g_hwndMain);
   if (lpCmdLine && lpCmdLine[0])
