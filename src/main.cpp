@@ -396,6 +396,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case IDM_VIEW_BG_POS_FILL:
             SetBackgroundPosition(BgPosition::Fill);
             break;
+        case IDM_HELP_CHECKUPDATES:
+            HelpCheckUpdates();
+            break;
         case IDM_HELP_ABOUT:
             HelpAbout();
             break;

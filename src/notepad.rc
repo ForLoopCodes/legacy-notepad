@@ -81,6 +81,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
+        MENUITEM "Check for &Updates...", IDM_HELP_CHECKUPDATES
         MENUITEM "&About Notepad", IDM_HELP_ABOUT
     END
 END

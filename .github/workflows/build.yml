@@ -18,16 +18,21 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure CMake
-        run: cmake -B build -A ${{ matrix.arch }} -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build-${{ matrix.arch }} -A ${{ matrix.arch }} -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build-${{ matrix.arch }} --config Release
+
+      - name: Package (NSIS)
+        run: cpack --config build-${{ matrix.arch }}/CPackConfig.cmake -C Release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: legacy-notepad-${{ matrix.arch }}
-          path: build/Release/legacy-notepad.exe
+          path: |
+            build-${{ matrix.arch }}/Release/legacy-notepad.exe
+            build-${{ matrix.arch }}/legacy-notepad-*.exe
 
   release:
     needs: build
@@ -44,6 +49,8 @@ jobs:
         with:
           files: |
             artifacts/legacy-notepad-x64/legacy-notepad.exe
-            artifacts/legacy-notepad-x86/legacy-notepad.exe
+            artifacts/legacy-notepad-x64/legacy-notepad-*.exe
+            artifacts/legacy-notepad-Win32/legacy-notepad.exe
+            artifacts/legacy-notepad-Win32/legacy-notepad-*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

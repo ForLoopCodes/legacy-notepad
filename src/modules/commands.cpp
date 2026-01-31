@@ -21,6 +21,7 @@
 #include "resource.h"
 #include <commdlg.h>
 #include <shlwapi.h>
+#include <shellapi.h>
 #include <vector>
 
 bool ConfirmDiscard()
@@ -227,4 +228,9 @@ void ViewStatusBar()
     CheckMenuItem(GetMenu(g_hwndMain), IDM_VIEW_STATUSBAR, g_state.showStatusBar ? MF_CHECKED : MF_UNCHECKED);
     ResizeControls();
     UpdateStatus();
+}
+
+void HelpCheckUpdates()
+{
+    ShellExecuteW(nullptr, L"open", L"https://github.com/ForLoopCodes/legacy-notepad/releases/latest", nullptr, nullptr, SW_SHOWNORMAL);
 }
