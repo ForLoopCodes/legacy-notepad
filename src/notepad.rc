@@ -78,6 +78,13 @@ BEGIN
         END
         MENUITEM SEPARATOR
         MENUITEM "Window &Transparency...", IDM_VIEW_TRANSPARENCY
+        MENUITEM "Always on &Top", IDM_VIEW_ALWAYSONTOP
+        MENUITEM SEPARATOR
+        POPUP "&Language"
+        BEGIN
+            MENUITEM "&English", IDM_VIEW_LANG_EN
+            MENUITEM "&Japanese", IDM_VIEW_LANG_JA
+        END
     END
     POPUP "&Help"
     BEGIN

@@ -38,3 +38,4 @@ void ViewZoomIn();
 void ViewZoomOut();
 void ViewZoomDefault();
 void ViewStatusBar();
+void ViewAlwaysOnTop();

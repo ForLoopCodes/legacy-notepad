@@ -117,6 +117,7 @@ struct AppState
     int fontSize = 16;
     std::wstring fontName = L"Consolas";
     BYTE windowOpacity = 255;
+    bool alwaysOnTop = false;
     bool closing = false;
     HFONT hFont = nullptr;
     std::deque<std::wstring> recentFiles;

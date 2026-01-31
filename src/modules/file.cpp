@@ -12,43 +12,45 @@
   File I/O operations with multi-encoding support (UTF-8, UTF-16, ANSI).
   Handles BOM detection, line ending conversion, and recent files tracking.
 */
-
 #include "file.h"
 #include "core/globals.h"
 #include "editor.h"
 #include "ui.h"
 #include "resource.h"
+#include "lang/lang.h"
 #include <shlwapi.h>
 #include <algorithm>
 
 const wchar_t *GetEncodingName(Encoding e)
 {
+    const auto &lang = GetLangStrings();
     switch (e)
     {
     case Encoding::UTF8:
-        return L"UTF-8";
+        return lang.encodingUTF8.c_str();
     case Encoding::UTF8BOM:
-        return L"UTF-8 with BOM";
+        return lang.encodingUTF8BOM.c_str();
     case Encoding::UTF16LE:
-        return L"UTF-16 LE";
+        return lang.encodingUTF16LE.c_str();
     case Encoding::UTF16BE:
-        return L"UTF-16 BE";
+        return lang.encodingUTF16BE.c_str();
     case Encoding::ANSI:
-        return L"ANSI";
+        return lang.encodingANSI.c_str();
     }
     return L"";
 }
 
 const wchar_t *GetLineEndingName(LineEnding le)
 {
+    const auto &lang = GetLangStrings();
     switch (le)
     {
     case LineEnding::CRLF:
-        return L"Windows (CRLF)";
+        return lang.lineEndingCRLF.c_str();
     case LineEnding::LF:
-        return L"Unix (LF)";
+        return lang.lineEndingLF.c_str();
     case LineEnding::CR:
-        return L"Macintosh (CR)";
+        return lang.lineEndingCR.c_str();
     }
     return L"";
 }
@@ -131,7 +133,7 @@ std::wstring DecodeText(const std::vector<BYTE> &data, Encoding enc)
 std::vector<BYTE> EncodeText(const std::wstring &text, Encoding enc, LineEnding le)
 {
     std::wstring converted;
-    converted.reserve(text.size() * 2);
+    converted.reserve(text.size() + text.size() / 10);
     for (size_t i = 0; i < text.size(); ++i)
     {
         wchar_t c = text[i];
@@ -178,6 +180,7 @@ std::vector<BYTE> EncodeText(const std::wstring &text, Encoding enc, LineEnding 
     case Encoding::UTF16LE:
         result.push_back(0xFF);
         result.push_back(0xFE);
+        result.reserve(result.size() + converted.size() * 2);
         for (wchar_t c : converted)
         {
             result.push_back(static_cast<BYTE>(c & 0xFF));
@@ -187,6 +190,7 @@ std::vector<BYTE> EncodeText(const std::wstring &text, Encoding enc, LineEnding 
     case Encoding::UTF16BE:
         result.push_back(0xFE);
         result.push_back(0xFF);
+        result.reserve(result.size() + converted.size() * 2);
         for (wchar_t c : converted)
         {
             result.push_back(static_cast<BYTE>((c >> 8) & 0xFF));
@@ -214,7 +218,8 @@ void LoadFile(const std::wstring &path)
                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE)
     {
-        MessageBoxW(g_hwndMain, L"Cannot open file.", L"Error", MB_ICONERROR);
+        const auto &lang = GetLangStrings();
+        MessageBoxW(g_hwndMain, lang.msgCannotOpenFile.c_str(), lang.msgError.c_str(), MB_ICONERROR);
         return;
     }
     DWORD size = GetFileSize(hFile, nullptr);
@@ -242,7 +247,8 @@ void SaveToPath(const std::wstring &path)
                                CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE)
     {
-        MessageBoxW(g_hwndMain, L"Cannot save file.", L"Error", MB_ICONERROR);
+        const auto &lang = GetLangStrings();
+        MessageBoxW(g_hwndMain, lang.msgCannotSaveFile.c_str(), lang.msgError.c_str(), MB_ICONERROR);
         return;
     }
     DWORD written = 0;
@@ -293,5 +299,6 @@ void UpdateRecentFilesMenu()
         std::wstring display = PathFindFileNameW(file.c_str());
         AppendMenuW(hRecentMenu, MF_STRING, id++, display.c_str());
     }
-    InsertMenuW(hFileMenu, 5, MF_BYPOSITION | MF_POPUP, reinterpret_cast<UINT_PTR>(hRecentMenu), L"Recent Files");
+    const auto &lang = GetLangStrings();
+    InsertMenuW(hFileMenu, 5, MF_BYPOSITION | MF_POPUP, reinterpret_cast<UINT_PTR>(hRecentMenu), lang.menuRecentFiles.c_str());
 }

@@ -38,23 +38,12 @@ void SetEditorText(const std::wstring &text)
 
 std::pair<int, int> GetCursorPos()
 {
-    std::wstring text = GetEditorText();
     DWORD start = 0, end = 0;
     SendMessageW(g_hwndEditor, EM_GETSEL, reinterpret_cast<WPARAM>(&start), reinterpret_cast<LPARAM>(&end));
     int pos = static_cast<int>(start);
-    int line = 1, col = 1;
-    for (int i = 0; i < pos && i < static_cast<int>(text.size()); ++i)
-    {
-        if (text[i] == L'\n')
-        {
-            ++line;
-            col = 1;
-        }
-        else if (text[i] != L'\r')
-        {
-            ++col;
-        }
-    }
+    int line = static_cast<int>(SendMessageW(g_hwndEditor, EM_LINEFROMCHAR, pos, 0)) + 1;
+    int lineStart = static_cast<int>(SendMessageW(g_hwndEditor, EM_LINEINDEX, line - 1, 0));
+    int col = pos - lineStart + 1;
     return {line, col};
 }
 
