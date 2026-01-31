@@ -1,12 +1,8 @@
-[![Build and Release](https://github.com/nananankona/legacy-notepad-add-lang/actions/workflows/build.yml/badge.svg)](https://github.com/nananankona/legacy-notepad-add-lang/actions/workflows/build.yml)
-
 # Legacy Notepad
 
 A lightweight, 25x fast, Windows notepad alternative built with C++17 and Win32 API which I made because microsoft wont stop adding AI bloatware to notepad.exe.
 
-<img width="797" height="595" alt="image" src="https://github.com/user-attachments/assets/c29c1cf5-1b4f-4638-b9f0-4fb6d0d7ac0e" />
-
-<img width="743" height="101" alt="image" src="https://github.com/user-attachments/assets/3c771eba-5570-4ead-ba49-73666b00f051" />
+<img width="752" height="242" alt="image" src="https://github.com/user-attachments/assets/bca18796-b088-4488-a445-649a549ddace" />
 <img width="738" height="243" alt="image" src="https://github.com/user-attachments/assets/e9ba9361-d1ea-41ee-a18d-f38fb9bdb546" />
 
 ## Features
@@ -15,12 +11,6 @@ A lightweight, 25x fast, Windows notepad alternative built with C++17 and Win32 
 - **Rich editing**: word wrap toggle, font selection, zoom, time/date stamp, find/replace/goto.
 - **Backgrounds**: optional image with tile/stretch/fit/fill/anchor modes and opacity control. (known issues)
 - **Printing**: print and page setup dialogs.
-
-## Added Features
-
-- **Pin Window**: Pins the Notepad window to the front.
-- **Language Support**: Added new languages.
-- **Don't Prompt if Empty**: Does not display a confirmation message when saving an empty file without a title.
 
 ## Requirements
 

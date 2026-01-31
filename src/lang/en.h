@@ -98,7 +98,7 @@ inline LangStrings g_langEN = {
     L"Cannot open file.",
     L"Cannot save file.",
     L"Error",
-    L"Legacy Notepad v1.1.0\n\nA fast, lightweight text editor.\n\nBuilt with C++ and Win32 API.\n\nModify by 0x2o.net",
+    L"Legacy Notepad v1.1.1\n\nA fast, lightweight text editor.\n\nBuilt with C++ and Win32 API.\n", //\nModify by 0x2o.net",
 
     // Status bar
     L" Ln ",
