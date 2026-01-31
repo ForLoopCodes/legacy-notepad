@@ -19,6 +19,7 @@
 #include "file.h"
 #include "ui.h"
 #include "resource.h"
+#include "lang/lang.h"
 #include <commdlg.h>
 #include <shlwapi.h>
 #include <vector>
@@ -27,9 +28,21 @@ bool ConfirmDiscard()
 {
     if (!g_state.modified)
         return true;
-    std::wstring filename = g_state.filePath.empty() ? L"Untitled" : PathFindFileNameW(g_state.filePath.c_str());
-    std::wstring msg = L"Do you want to save changes to " + filename + L"?";
-    int result = MessageBoxW(g_hwndMain, msg.c_str(), APP_NAME, MB_YESNOCANCEL | MB_ICONWARNING);
+    //  untitled and empty, don't ask to save
+    if (g_state.filePath.empty())
+    {
+        std::wstring text = GetEditorText();
+        if (text.empty())
+            return true;
+    }
+    const auto &lang = GetLangStrings();
+    std::wstring filename = g_state.filePath.empty() ? lang.untitled : PathFindFileNameW(g_state.filePath.c_str());
+    std::wstring msg;
+    msg.reserve(lang.msgSaveChanges.size() + filename.size() + 2);
+    msg = lang.msgSaveChanges;
+    msg += filename;
+    msg += L"?";
+    int result = MessageBoxW(g_hwndMain, msg.c_str(), lang.appName.c_str(), MB_YESNOCANCEL | MB_ICONWARNING);
     if (result == IDYES)
     {
         FileSave();
@@ -98,7 +111,8 @@ void FilePrint()
         return;
     HDC hDC = pd.hDC;
     DOCINFOW di = {sizeof(di)};
-    std::wstring docName = g_state.filePath.empty() ? L"Untitled" : PathFindFileNameW(g_state.filePath.c_str());
+    const auto &lang = GetLangStrings();
+    std::wstring docName = g_state.filePath.empty() ? lang.untitled : PathFindFileNameW(g_state.filePath.c_str());
     di.lpszDocName = docName.c_str();
     if (StartDocW(hDC, &di) > 0)
     {
@@ -227,4 +241,11 @@ void ViewStatusBar()
     CheckMenuItem(GetMenu(g_hwndMain), IDM_VIEW_STATUSBAR, g_state.showStatusBar ? MF_CHECKED : MF_UNCHECKED);
     ResizeControls();
     UpdateStatus();
+}
+
+void ViewAlwaysOnTop()
+{
+    g_state.alwaysOnTop = !g_state.alwaysOnTop;
+    CheckMenuItem(GetMenu(g_hwndMain), IDM_VIEW_ALWAYSONTOP, g_state.alwaysOnTop ? MF_CHECKED : MF_UNCHECKED);
+    SetWindowPos(g_hwndMain, g_state.alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }

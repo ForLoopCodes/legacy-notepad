@@ -19,6 +19,7 @@ endif()
 add_executable(legacy-notepad WIN32
     src/main.cpp
     src/core/globals.cpp
+    src/lang/lang.cpp
     src/modules/theme.cpp
     src/modules/editor.cpp
     src/modules/file.cpp
@@ -26,6 +27,7 @@ add_executable(legacy-notepad WIN32
     src/modules/background.cpp
     src/modules/dialog.cpp
     src/modules/commands.cpp
+    src/modules/menu.cpp
     src/notepad.rc
 )
 
