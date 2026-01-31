@@ -12,9 +12,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x64, x86]
-
-    steps:
+        arch: [x64, Win32]
       - uses: actions/checkout@v4
 
       - name: Configure CMake
