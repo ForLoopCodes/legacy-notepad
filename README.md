@@ -5,6 +5,10 @@ A lightweight, 25x fast, Windows notepad alternative built with C++17 and Win32 
 <img width="752" height="242" alt="image" src="https://github.com/user-attachments/assets/bca18796-b088-4488-a445-649a549ddace" />
 <img width="738" height="243" alt="image" src="https://github.com/user-attachments/assets/e9ba9361-d1ea-41ee-a18d-f38fb9bdb546" />
 
+## Screenshot:
+
+<img width="986" height="735" alt="image" src="https://github.com/user-attachments/assets/939cbb8b-a770-449c-9d9d-e93e076787d3" />
+
 ## Features
 
 - **Multi-encoding text**: UTF-8, UTF-8 BOM, UTF-16 LE/BE, ANSI with line-ending selection.
