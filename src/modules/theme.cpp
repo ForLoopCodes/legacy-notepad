@@ -75,7 +75,8 @@ LRESULT CALLBACK StatusSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             FillRect(hdc, &rc, hbr);
             if (!g_hbrStatusDark)
                 DeleteObject(hbr);
-            NONCLIENTMETRICSW ncm = {sizeof(ncm)};
+            NONCLIENTMETRICSW ncm = {};
+            ncm.cbSize = sizeof(ncm);
             SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
             HFONT hFont = CreateFontIndirectW(&ncm.lfStatusFont);
             HFONT hOldFont = reinterpret_cast<HFONT>(SelectObject(hdc, hFont));

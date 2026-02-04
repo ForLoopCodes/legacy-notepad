@@ -8,12 +8,21 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Use static runtime for MSVC
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
+option(LEGACY_NOTEPAD_WERROR "Treat warnings as errors" OFF)
+
 if(MSVC)
     add_compile_options(/W4 /WX /permissive- /utf-8)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:wWinMainCRTStartup")
 else()
-    add_compile_options(-Wall -Wextra -Werror -municode -Wno-error=missing-field-initializers)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -mwindows")
+    add_compile_options(-Wall -Wextra -municode -Wno-error=missing-field-initializers)
+    if(LEGACY_NOTEPAD_WERROR)
+        add_compile_options(-Werror)
+    endif()
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -mwindows")
+    else()
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
+    endif()
 endif()
 
 add_executable(legacy-notepad WIN32
@@ -48,9 +57,14 @@ target_link_libraries(legacy-notepad PRIVATE
 )
 
 if(NOT MSVC)
-    target_link_options(legacy-notepad PRIVATE -mwindows -municode -static)
-    target_link_libraries(legacy-notepad PRIVATE -static-libgcc -static-libstdc++)
-    add_custom_command(TARGET legacy-notepad POST_BUILD COMMAND ${CMAKE_STRIP} --strip-all $<TARGET_FILE:legacy-notepad>)
+    target_link_options(legacy-notepad PRIVATE -mwindows -municode)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_options(legacy-notepad PRIVATE -static)
+        target_link_libraries(legacy-notepad PRIVATE -static-libgcc -static-libstdc++)
+    endif()
+    if(CMAKE_STRIP)
+        add_custom_command(TARGET legacy-notepad POST_BUILD COMMAND ${CMAKE_STRIP} --strip-all $<TARGET_FILE:legacy-notepad>)
+    endif()
 endif()
 
 # Installation

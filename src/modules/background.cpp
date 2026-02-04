@@ -50,12 +50,13 @@ void PaintBackground(HDC hdc, const RECT &rc)
     int winH = rc.bottom - rc.top;
     Gdiplus::ImageAttributes imgAttr;
     float opacity = g_state.background.opacity / 255.0f;
-    Gdiplus::ColorMatrix colorMatrix = {
-        1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, opacity, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    Gdiplus::ColorMatrix colorMatrix = {{
+        {1.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f, opacity, 0.0f},
+        {0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+    }};
     imgAttr.SetColorMatrix(&colorMatrix, Gdiplus::ColorMatrixFlagsDefault, Gdiplus::ColorAdjustTypeBitmap);
     auto drawImage = [&](int x, int y, int w, int h)
     {
@@ -221,7 +222,8 @@ void SetBackgroundPosition(BgPosition pos)
 void ViewSelectBackground()
 {
     wchar_t path[MAX_PATH] = {0};
-    OPENFILENAMEW ofn = {sizeof(ofn)};
+    OPENFILENAMEW ofn = {};
+    ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = g_hwndMain;
     ofn.lpstrFilter = L"Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.gif)\0*.png;*.jpg;*.jpeg;*.bmp;*.gif\0All Files (*.*)\0*.*\0";
     ofn.lpstrFile = path;

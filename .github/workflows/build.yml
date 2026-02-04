@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x64, Win32]
+        arch: [x64, Win32, ARM64]
 
     steps:
       - uses: actions/checkout@v4
@@ -55,5 +55,7 @@ jobs:
             artifacts/legacy-notepad-x64/legacy-notepad-*.exe
             artifacts/legacy-notepad-Win32/legacy-notepad.exe
             artifacts/legacy-notepad-Win32/legacy-notepad-*.exe
+            artifacts/legacy-notepad-ARM64/legacy-notepad.exe
+            artifacts/legacy-notepad-ARM64/legacy-notepad-*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -53,7 +53,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                                        WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDC_STATUSBAR), GetModuleHandleW(nullptr), nullptr);
         g_origStatusProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_hwndStatus, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(StatusSubclassProc)));
         SendMessageW(g_hwndEditor, EM_SETLIMITTEXT, 0, 0);
-        SendMessageW(g_hwndEditor, EM_SETEVENTMASK, 0, ENM_CHANGE);
+        SendMessageW(g_hwndEditor, EM_SETEVENTMASK, 0, ENM_CHANGE | ENM_SELCHANGE);
         ApplyFont();
         SetupStatusBarParts();
         UpdateTitle();
@@ -67,7 +67,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (IsDarkMode())
         {
             UAHMENU *pUDM = reinterpret_cast<UAHMENU *>(lParam);
-            MENUBARINFO mbi = {sizeof(mbi)};
+            MENUBARINFO mbi = {};
+            mbi.cbSize = sizeof(mbi);
             if (GetMenuBarInfo(hwnd, OBJID_MENU, 0, &mbi))
             {
                 RECT rcWindow;
@@ -86,7 +87,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             UAHDRAWMENUITEM *pUDMI = reinterpret_cast<UAHDRAWMENUITEM *>(lParam);
             wchar_t szText[256] = {};
-            MENUITEMINFOW mii = {sizeof(mii)};
+            MENUITEMINFOW mii = {};
+            mii.cbSize = sizeof(mii);
             mii.fMask = MIIM_STRING;
             mii.dwTypeData = szText;
             mii.cch = 255;
@@ -98,7 +100,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             HBRUSH hbr = CreateSolidBrush(bgColor);
             FillRect(pUDMI->um.hdc, &pUDMI->dis.rcItem, hbr);
             DeleteObject(hbr);
-            NONCLIENTMETRICSW ncm = {sizeof(ncm)};
+            NONCLIENTMETRICSW ncm = {};
+            ncm.cbSize = sizeof(ncm);
             SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
             HFONT hFont = CreateFontIndirectW(&ncm.lfMenuFont);
             HFONT hOldFont = reinterpret_cast<HFONT>(SelectObject(pUDMI->um.hdc, hFont));
@@ -119,7 +122,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (IsDarkMode())
         {
             HDC hdc = GetWindowDC(hwnd);
-            MENUBARINFO mbi = {sizeof(mbi)};
+            MENUBARINFO mbi = {};
+            mbi.cbSize = sizeof(mbi);
             if (GetMenuBarInfo(hwnd, OBJID_MENU, 0, &mbi))
             {
                 RECT rcWindow;
@@ -130,7 +134,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 FillRect(hdc, &rcMenuBar, g_hbrMenuDark ? g_hbrMenuDark : reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
                 HMENU hMenu = GetMenu(hwnd);
                 int itemCount = GetMenuItemCount(hMenu);
-                NONCLIENTMETRICSW ncm = {sizeof(ncm)};
+                NONCLIENTMETRICSW ncm = {};
+                ncm.cbSize = sizeof(ncm);
                 SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
                 HFONT hFont = CreateFontIndirectW(&ncm.lfMenuFont);
                 HFONT hOldFont = reinterpret_cast<HFONT>(SelectObject(hdc, hFont));
@@ -144,7 +149,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         rcItem = mbi.rcBar;
                         OffsetRect(&rcItem, -rcWindow.left, -rcWindow.top);
                         wchar_t szText[256] = {};
-                        MENUITEMINFOW mii = {sizeof(mii)};
+                        MENUITEMINFOW mii = {};
+                        mii.cbSize = sizeof(mii);
                         mii.fMask = MIIM_STRING;
                         mii.dwTypeData = szText;
                         mii.cch = 255;
@@ -225,6 +231,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
     {
         WORD cmd = LOWORD(wParam);
+        if (cmd == IDC_EDITOR && HIWORD(wParam) == EN_CHANGE)
+        {
+            if (!g_state.modified)
+            {
+                g_state.modified = true;
+                UpdateTitle();
+            }
+            UpdateStatus();
+            return 0;
+        }
+
         if (cmd >= IDM_FILE_RECENT_BASE && cmd < IDM_FILE_RECENT_BASE + MAX_RECENT_FILES)
         {
             int idx = cmd - IDM_FILE_RECENT_BASE;
@@ -411,10 +428,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 }
             }
         }
-        if (pnmh->hwndFrom == g_hwndEditor && pnmh->code == EN_CHANGE)
+        if (pnmh->hwndFrom == g_hwndEditor && pnmh->code == EN_SELCHANGE)
         {
-            g_state.modified = true;
-            UpdateTitle();
             UpdateStatus();
         }
         return 0;
@@ -499,7 +514,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdSh
 
     LoadFontSettings();
 
-    WNDCLASSEXW wc = {sizeof(wc)};
+    WNDCLASSEXW wc = {};
+    wc.cbSize = sizeof(wc);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;

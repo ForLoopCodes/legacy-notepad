@@ -78,7 +78,8 @@ void ApplyFont()
                                 DEFAULT_PITCH | FF_DONTCARE, g_state.fontName.c_str());
     SendMessageW(g_hwndEditor, WM_SETFONT, reinterpret_cast<WPARAM>(g_state.hFont), TRUE);
     COLORREF textColor = IsDarkMode() ? RGB(255, 255, 255) : GetSysColor(COLOR_WINDOWTEXT);
-    CHARFORMAT2W cf = {sizeof(cf)};
+    CHARFORMAT2W cf = {};
+    cf.cbSize = sizeof(cf);
     cf.dwMask = CFM_COLOR;
     cf.crTextColor = textColor;
     SendMessageW(g_hwndEditor, EM_SETCHARFORMAT, SCF_ALL, reinterpret_cast<LPARAM>(&cf));
@@ -103,7 +104,7 @@ void ApplyWordWrap()
                                    0, 0, 100, 100, g_hwndMain, reinterpret_cast<HMENU>(IDC_EDITOR), GetModuleHandleW(nullptr), nullptr);
     g_origEditorProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_hwndEditor, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(EditorSubclassProc)));
     SendMessageW(g_hwndEditor, EM_SETLIMITTEXT, 0, 0);
-    SendMessageW(g_hwndEditor, EM_SETEVENTMASK, 0, ENM_CHANGE);
+    SendMessageW(g_hwndEditor, EM_SETEVENTMASK, 0, ENM_CHANGE | ENM_SELCHANGE);
     ApplyFont();
     ApplyTheme();
     SetEditorText(text);

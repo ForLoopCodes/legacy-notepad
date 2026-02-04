@@ -57,7 +57,8 @@ void FileOpen()
     if (!ConfirmDiscard())
         return;
     wchar_t path[MAX_PATH] = {0};
-    OPENFILENAMEW ofn = {sizeof(ofn)};
+    OPENFILENAMEW ofn = {};
+    ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = g_hwndMain;
     ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
     ofn.lpstrFile = path;
@@ -78,7 +79,8 @@ void FileSave()
 void FileSaveAs()
 {
     wchar_t path[MAX_PATH] = {0};
-    OPENFILENAMEW ofn = {sizeof(ofn)};
+    OPENFILENAMEW ofn = {};
+    ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = g_hwndMain;
     ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
     ofn.lpstrFile = path;
@@ -92,13 +94,15 @@ void FileSaveAs()
 void FilePrint()
 {
     std::wstring text = GetEditorText();
-    PRINTDLGW pd = {sizeof(pd)};
+    PRINTDLGW pd = {};
+    pd.lStructSize = sizeof(pd);
     pd.hwndOwner = g_hwndMain;
     pd.Flags = PD_RETURNDC | PD_NOPAGENUMS | PD_NOSELECTION;
     if (!PrintDlgW(&pd))
         return;
     HDC hDC = pd.hDC;
-    DOCINFOW di = {sizeof(di)};
+    DOCINFOW di = {};
+    di.cbSize = sizeof(di);
     std::wstring docName = g_state.filePath.empty() ? L"Untitled" : PathFindFileNameW(g_state.filePath.c_str());
     di.lpszDocName = docName.c_str();
     if (StartDocW(hDC, &di) > 0)
@@ -154,6 +158,7 @@ void FilePrint()
 
 void FilePageSetup()
 {
+    g_pageSetup.lStructSize = sizeof(g_pageSetup);
     g_pageSetup.hwndOwner = g_hwndMain;
     g_pageSetup.Flags = PSD_MARGINS | PSD_INHUNDREDTHSOFMILLIMETERS;
     PageSetupDlgW(&g_pageSetup);
@@ -233,7 +238,8 @@ void ViewStatusBar()
 void ViewChangeIcon()
 {
     wchar_t path[MAX_PATH] = {0};
-    OPENFILENAMEW ofn = {sizeof(ofn)};
+    OPENFILENAMEW ofn = {};
+    ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = g_hwndMain;
     ofn.lpstrFilter = L"Icon Files (*.ico)\0*.ico\0All Files (*.*)\0*.*\0";
     ofn.lpstrFile = path;

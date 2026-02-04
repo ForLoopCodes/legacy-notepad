@@ -30,6 +30,6 @@ int g_bgBitmapW = 0;
 int g_bgBitmapH = 0;
 HBRUSH g_hbrStatusDark = nullptr;
 HBRUSH g_hbrMenuDark = nullptr;
-PAGESETUPDLGW g_pageSetup = {sizeof(g_pageSetup)};
+PAGESETUPDLGW g_pageSetup = {};
 std::wstring g_statusTexts[4];
 HICON g_hCustomIcon = nullptr;
