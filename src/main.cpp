@@ -46,6 +46,7 @@
 #include "modules/background.h"
 #include "modules/dialog.h"
 #include "modules/commands.h"
+#include "modules/settings.h"
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -511,6 +512,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdSh
     icc.dwSize = sizeof(icc);
     icc.dwICC = ICC_BAR_CLASSES;
     InitCommonControlsEx(&icc);
+    LoadFontSettings();
     WNDCLASSEXW wc{};
     wc.cbSize = sizeof(wc);
     wc.style = CS_HREDRAW | CS_VREDRAW;

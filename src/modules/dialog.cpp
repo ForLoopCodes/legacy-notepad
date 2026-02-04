@@ -17,6 +17,7 @@
 #include "core/globals.h"
 #include "editor.h"
 #include "ui.h"
+#include "settings.h"
 #include <commdlg.h>
 #include <algorithm>
 #include <cwctype>
@@ -310,6 +311,7 @@ void FormatFont()
         g_state.fontSize = MulDiv(-lf.lfHeight, 72, GetDeviceCaps(hdc2, LOGPIXELSY));
         ReleaseDC(g_hwndMain, hdc2);
         ApplyFont();
+        SaveFontSettings();
     }
 }
 

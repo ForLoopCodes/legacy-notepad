@@ -26,6 +26,7 @@ add_executable(legacy-notepad WIN32
     src/modules/background.cpp
     src/modules/dialog.cpp
     src/modules/commands.cpp
+    src/modules/settings.cpp
     src/notepad.rc
 )
 
