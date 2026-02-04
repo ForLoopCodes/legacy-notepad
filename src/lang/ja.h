@@ -3,11 +3,9 @@
 #include "lang.h"
 
 inline LangStrings g_langJA = {
-    // App
     L"メモ帳",
     L"無題",
 
-    // Menu - File
     L"ファイル(&F)",
     L"新規(&N)\tCtrl+N",
     L"開く(&O)...\tCtrl+O",
@@ -18,7 +16,6 @@ inline LangStrings g_langJA = {
     L"終了(&X)",
     L"最近使ったファイル",
 
-    // Menu - Edit
     L"編集(&E)",
     L"元に戻す(&U)\tCtrl+Z",
     L"やり直し(&R)\tCtrl+Y",
@@ -34,12 +31,10 @@ inline LangStrings g_langJA = {
     L"すべて選択(&A)\tCtrl+A",
     L"日時(&D)\tF5",
 
-    // Menu - Format
     L"書式(&O)",
     L"折り返し(&W)",
     L"フォント(&F)...",
 
-    // Menu - View
     L"表示(&V)",
     L"拡大(&I)\tCtrl+Plus",
     L"縮小(&O)\tCtrl+Minus",
@@ -67,16 +62,13 @@ inline LangStrings g_langJA = {
     L"ウィンドウの透明度(&T)...",
     L"常に最前面に表示(&T)",
 
-    // Menu - Help
     L"ヘルプ(&H)",
     L"メモ帳について(&A)",
 
-    // Menu - Language
     L"言語(&L)",
     L"英語(&E)",
     L"日本語(&J)",
 
-    // Dialogs
     L"検索",
     L"検索と置換",
     L"行へジャンプ",
@@ -92,27 +84,22 @@ inline LangStrings g_langJA = {
     L"キャンセル",
     L"不透明度 (10-100%):",
 
-    // Messages
     L"「",
     L"次のファイルに変更を保存しますか: ",
     L"ファイルを開けません。",
     L"ファイルを保存できません。",
     L"エラー",
-    L"Legacy Notepad v1.1.1\n\n高速で軽量なテキストエディタ。\n\nC++ Win32 API で構築。\n",//\nModify by 0x2o.net",
+    L"Legacy Notepad v1.1.1\n\n高速で軽量なテキストエディタ。\n\nC++ Win32 API で構築。\n", //\nModify by 0x2o.net",
 
-    // Status bar
     L" 行 ",
     L", 列 ",
 
-    // Encoding names
     L"UTF-8",
     L"UTF-8 (BOM付き)",
     L"UTF-16 LE",
     L"UTF-16 BE",
     L"ANSI",
 
-    // Line ending names
     L"Windows (CRLF)",
     L"Unix (LF)",
-    L"Macintosh (CR)"
-};
+    L"Macintosh (CR)"};

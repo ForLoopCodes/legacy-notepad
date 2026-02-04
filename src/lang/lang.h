@@ -5,17 +5,15 @@
 
 enum class LangID
 {
-    EN, 
-    JA  
+    EN,
+    JA
 };
 
 struct LangStrings
 {
-    // App
     std::wstring appName;
     std::wstring untitled;
 
-    // Menu - File
     std::wstring menuFile;
     std::wstring menuNew;
     std::wstring menuOpen;
@@ -26,7 +24,6 @@ struct LangStrings
     std::wstring menuExit;
     std::wstring menuRecentFiles;
 
-    // Menu - Edit
     std::wstring menuEdit;
     std::wstring menuUndo;
     std::wstring menuRedo;
@@ -42,12 +39,10 @@ struct LangStrings
     std::wstring menuSelectAll;
     std::wstring menuTimeDate;
 
-    // Menu - Format
     std::wstring menuFormat;
     std::wstring menuWordWrap;
     std::wstring menuFont;
 
-    // Menu - View
     std::wstring menuView;
     std::wstring menuZoomIn;
     std::wstring menuZoomOut;
@@ -75,16 +70,13 @@ struct LangStrings
     std::wstring menuTransparency;
     std::wstring menuAlwaysOnTop;
 
-    // Menu - Help
     std::wstring menuHelp;
     std::wstring menuAbout;
 
-    // Menu - Language
     std::wstring menuLanguage;
     std::wstring menuLangEnglish;
     std::wstring menuLangJapanese;
 
-    // Dialogs
     std::wstring dialogFind;
     std::wstring dialogFindReplace;
     std::wstring dialogGoTo;
@@ -100,7 +92,6 @@ struct LangStrings
     std::wstring dialogCancel;
     std::wstring dialogOpacityLabel;
 
-    // Messages
     std::wstring msgCannotFind;
     std::wstring msgSaveChanges;
     std::wstring msgCannotOpenFile;
@@ -108,18 +99,15 @@ struct LangStrings
     std::wstring msgError;
     std::wstring msgAbout;
 
-    // Status bar
     std::wstring statusLn;
     std::wstring statusCol;
 
-    // Encoding names
     std::wstring encodingUTF8;
     std::wstring encodingUTF8BOM;
     std::wstring encodingUTF16LE;
     std::wstring encodingUTF16BE;
     std::wstring encodingANSI;
 
-    // Line ending names
     std::wstring lineEndingCRLF;
     std::wstring lineEndingLF;
     std::wstring lineEndingCR;

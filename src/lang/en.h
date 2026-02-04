@@ -3,11 +3,9 @@
 #include "lang.h"
 
 inline LangStrings g_langEN = {
-    // App
     L"Notepad",
     L"Untitled",
 
-    // Menu - File
     L"&File",
     L"&New\tCtrl+N",
     L"&Open...\tCtrl+O",
@@ -18,7 +16,6 @@ inline LangStrings g_langEN = {
     L"E&xit",
     L"Recent Files",
 
-    // Menu - Edit
     L"&Edit",
     L"&Undo\tCtrl+Z",
     L"&Redo\tCtrl+Y",
@@ -34,12 +31,10 @@ inline LangStrings g_langEN = {
     L"Select &All\tCtrl+A",
     L"Time/&Date\tF5",
 
-    // Menu - Format
     L"F&ormat",
     L"&Word Wrap",
     L"&Font...",
 
-    // Menu - View
     L"&View",
     L"Zoom &In\tCtrl+Plus",
     L"Zoom &Out\tCtrl+Minus",
@@ -67,16 +62,13 @@ inline LangStrings g_langEN = {
     L"Window &Transparency...",
     L"Always on &Top",
 
-    // Menu - Help
     L"&Help",
     L"&About Notepad",
 
-    // Menu - Language
     L"&Language",
     L"&English",
     L"&Japanese",
 
-    // Dialogs
     L"Find",
     L"Find and Replace",
     L"Go To Line",
@@ -92,7 +84,6 @@ inline LangStrings g_langEN = {
     L"Cancel",
     L"Opacity (10-100%):",
 
-    // Messages
     L"Cannot find \"",
     L"Do you want to save changes to ",
     L"Cannot open file.",
@@ -100,19 +91,15 @@ inline LangStrings g_langEN = {
     L"Error",
     L"Legacy Notepad v1.1.1\n\nA fast, lightweight text editor.\n\nBuilt with C++ and Win32 API.\n", //\nModify by 0x2o.net",
 
-    // Status bar
     L" Ln ",
     L", Col ",
 
-    // Encoding names
     L"UTF-8",
     L"UTF-8 with BOM",
     L"UTF-16 LE",
     L"UTF-16 BE",
     L"ANSI",
 
-    // Line ending names
     L"Windows (CRLF)",
     L"Unix (LF)",
-    L"Macintosh (CR)"
-};
+    L"Macintosh (CR)"};

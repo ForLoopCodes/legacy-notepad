@@ -30,7 +30,6 @@ bool ConfirmDiscard()
 {
     if (!g_state.modified)
         return true;
-    //  untitled and empty, don't ask to save
     if (g_state.filePath.empty())
     {
         std::wstring text = GetEditorText();
