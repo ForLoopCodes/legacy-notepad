@@ -125,6 +125,7 @@ std::wstring DecodeText(const std::vector<BYTE> &data, Encoding enc)
         return L"";
     std::wstring result(wlen, 0);
     MultiByteToWideChar(codepage, 0, ptr, len, &result[0], wlen);
+    std::replace(result.begin(), result.end(), L'\0', L' ');
     return result;
 }
 

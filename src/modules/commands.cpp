@@ -28,6 +28,8 @@ bool ConfirmDiscard()
 {
     if (!g_state.modified)
         return true;
+    if (g_state.filePath.empty() && GetWindowTextLengthW(g_hwndEditor) == 0)
+        return true;
     std::wstring filename = g_state.filePath.empty() ? L"Untitled" : PathFindFileNameW(g_state.filePath.c_str());
     std::wstring msg = L"Do you want to save changes to " + filename + L"?";
     int result = MessageBoxW(g_hwndMain, msg.c_str(), APP_NAME, MB_YESNOCANCEL | MB_ICONWARNING);
@@ -60,10 +62,10 @@ void FileOpen()
     OPENFILENAMEW ofn = {};
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = g_hwndMain;
-    ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+    ofn.lpstrFilter = L"Text Documents (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
     ofn.lpstrFile = path;
     ofn.nMaxFile = MAX_PATH;
-    ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLESIZING;
     if (GetOpenFileNameW(&ofn))
         LoadFile(path);
 }
@@ -82,11 +84,11 @@ void FileSaveAs()
     OPENFILENAMEW ofn = {};
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = g_hwndMain;
-    ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+    ofn.lpstrFilter = L"Text Documents (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
     ofn.lpstrFile = path;
     ofn.nMaxFile = MAX_PATH;
     ofn.lpstrDefExt = L"txt";
-    ofn.Flags = OFN_OVERWRITEPROMPT;
+    ofn.Flags = OFN_OVERWRITEPROMPT | OFN_ENABLESIZING;
     if (GetSaveFileNameW(&ofn))
         SaveToPath(path);
 }

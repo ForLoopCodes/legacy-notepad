@@ -21,43 +21,67 @@
 #include "background.h"
 #include "resource.h"
 #include <richedit.h>
+#include <algorithm>
+
+struct StreamCookie
+{
+    const std::wstring *text;
+    size_t pos;
+};
+
+static DWORD CALLBACK StreamInCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
+{
+    StreamCookie *pCookie = reinterpret_cast<StreamCookie *>(dwCookie);
+    size_t remaining = (pCookie->text->length() * sizeof(wchar_t)) - pCookie->pos;
+    if (remaining <= 0)
+    {
+        *pcb = 0;
+        return 0;
+    }
+    size_t toCopy = std::min(static_cast<size_t>(cb), remaining);
+    memcpy(pbBuff, reinterpret_cast<const BYTE *>(pCookie->text->c_str()) + pCookie->pos, toCopy);
+    pCookie->pos += toCopy;
+    *pcb = static_cast<LONG>(toCopy);
+    return 0;
+}
+
+struct StreamOutCookie
+{
+    std::wstring *text;
+};
+
+static DWORD CALLBACK StreamOutCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
+{
+    StreamOutCookie *pCookie = reinterpret_cast<StreamOutCookie *>(dwCookie);
+    pCookie->text->append(reinterpret_cast<const wchar_t *>(pbBuff), cb / sizeof(wchar_t));
+    *pcb = cb;
+    return 0;
+}
 
 std::wstring GetEditorText()
 {
-    int len = GetWindowTextLengthW(g_hwndEditor);
-    if (len <= 0)
-        return L"";
-    std::wstring text(len + 1, 0);
-    GetWindowTextW(g_hwndEditor, &text[0], len + 1);
-    text.resize(len);
+    std::wstring text;
+    StreamOutCookie cookie = {&text};
+    EDITSTREAM es = {reinterpret_cast<DWORD_PTR>(&cookie), 0, StreamOutCallback};
+    SendMessageW(g_hwndEditor, EM_STREAMOUT, SF_TEXT | SF_UNICODE, reinterpret_cast<LPARAM>(&es));
     return text;
 }
 
 void SetEditorText(const std::wstring &text)
 {
-    SetWindowTextW(g_hwndEditor, text.c_str());
+    StreamCookie cookie = {&text, 0};
+    EDITSTREAM es = {reinterpret_cast<DWORD_PTR>(&cookie), 0, StreamInCallback};
+    SendMessageW(g_hwndEditor, EM_STREAMIN, SF_TEXT | SF_UNICODE, reinterpret_cast<LPARAM>(&es));
 }
 
 std::pair<int, int> GetCursorPos()
 {
-    std::wstring text = GetEditorText();
     DWORD start = 0, end = 0;
     SendMessageW(g_hwndEditor, EM_GETSEL, reinterpret_cast<WPARAM>(&start), reinterpret_cast<LPARAM>(&end));
-    int pos = static_cast<int>(start);
-    int line = 1, col = 1;
-    for (int i = 0; i < pos && i < static_cast<int>(text.size()); ++i)
-    {
-        if (text[i] == L'\n')
-        {
-            ++line;
-            col = 1;
-        }
-        else if (text[i] != L'\r')
-        {
-            ++col;
-        }
-    }
-    return {line, col};
+    int line = static_cast<int>(SendMessageW(g_hwndEditor, EM_EXLINEFROMCHAR, 0, start));
+    int lineIndex = static_cast<int>(SendMessageW(g_hwndEditor, EM_LINEINDEX, static_cast<WPARAM>(line), 0));
+    int col = static_cast<int>(start) - lineIndex;
+    return {line + 1, col + 1};
 }
 
 void ApplyFont()
@@ -103,7 +127,7 @@ void ApplyWordWrap()
     g_hwndEditor = CreateWindowExW(0, MSFTEDIT_CLASS, nullptr, style,
                                    0, 0, 100, 100, g_hwndMain, reinterpret_cast<HMENU>(IDC_EDITOR), GetModuleHandleW(nullptr), nullptr);
     g_origEditorProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_hwndEditor, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(EditorSubclassProc)));
-    SendMessageW(g_hwndEditor, EM_SETLIMITTEXT, 0, 0);
+    SendMessageW(g_hwndEditor, EM_EXLIMITTEXT, 0, static_cast<LPARAM>(-1));
     SendMessageW(g_hwndEditor, EM_SETEVENTMASK, 0, ENM_CHANGE | ENM_SELCHANGE);
     ApplyFont();
     ApplyTheme();
