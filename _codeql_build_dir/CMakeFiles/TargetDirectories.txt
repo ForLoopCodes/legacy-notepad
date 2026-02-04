@@ -1,0 +1,3 @@
+/home/runner/work/legacy-notepad/legacy-notepad/_codeql_build_dir/CMakeFiles/legacy-notepad.dir
+/home/runner/work/legacy-notepad/legacy-notepad/_codeql_build_dir/CMakeFiles/edit_cache.dir
+/home/runner/work/legacy-notepad/legacy-notepad/_codeql_build_dir/CMakeFiles/rebuild_cache.dir
