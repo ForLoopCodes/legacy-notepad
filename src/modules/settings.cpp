@@ -38,7 +38,7 @@ void LoadFontSettings()
         {
             g_state.fontName = fontName;
         }
-        
+
         DWORD fontSize = 0;
         size = sizeof(fontSize);
         if (RegQueryValueExW(hKey, FONT_SIZE_VALUE, nullptr, nullptr, reinterpret_cast<LPBYTE>(&fontSize), &size) == ERROR_SUCCESS)
@@ -69,7 +69,7 @@ void LoadFontSettings()
         {
             g_state.fontUnderline = (underline != 0);
         }
-        
+
         RegCloseKey(hKey);
     }
 }
@@ -79,30 +79,30 @@ void SaveFontSettings()
     HKEY hKey;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, SETTINGS_KEY, 0, nullptr, 0, KEY_WRITE, nullptr, &hKey, nullptr) == ERROR_SUCCESS)
     {
-        RegSetValueExW(hKey, FONT_NAME_VALUE, 0, REG_SZ, 
-                       reinterpret_cast<const BYTE*>(g_state.fontName.c_str()), 
+        RegSetValueExW(hKey, FONT_NAME_VALUE, 0, REG_SZ,
+                       reinterpret_cast<const BYTE *>(g_state.fontName.c_str()),
                        static_cast<DWORD>((g_state.fontName.length() + 1) * sizeof(wchar_t)));
-        
+
         DWORD fontSize = static_cast<DWORD>(g_state.fontSize);
-        RegSetValueExW(hKey, FONT_SIZE_VALUE, 0, REG_DWORD, 
-                       reinterpret_cast<const BYTE*>(&fontSize), 
+        RegSetValueExW(hKey, FONT_SIZE_VALUE, 0, REG_DWORD,
+                       reinterpret_cast<const BYTE *>(&fontSize),
                        sizeof(fontSize));
 
         DWORD weight = static_cast<DWORD>(g_state.fontWeight);
-        RegSetValueExW(hKey, FONT_WEIGHT_VALUE, 0, REG_DWORD, 
-                       reinterpret_cast<const BYTE*>(&weight), 
+        RegSetValueExW(hKey, FONT_WEIGHT_VALUE, 0, REG_DWORD,
+                       reinterpret_cast<const BYTE *>(&weight),
                        sizeof(weight));
 
         DWORD italic = g_state.fontItalic ? 1 : 0;
-        RegSetValueExW(hKey, FONT_ITALIC_VALUE, 0, REG_DWORD, 
-                       reinterpret_cast<const BYTE*>(&italic), 
+        RegSetValueExW(hKey, FONT_ITALIC_VALUE, 0, REG_DWORD,
+                       reinterpret_cast<const BYTE *>(&italic),
                        sizeof(italic));
 
         DWORD underline = g_state.fontUnderline ? 1 : 0;
-        RegSetValueExW(hKey, FONT_UNDERLINE_VALUE, 0, REG_DWORD, 
-                       reinterpret_cast<const BYTE*>(&underline), 
+        RegSetValueExW(hKey, FONT_UNDERLINE_VALUE, 0, REG_DWORD,
+                       reinterpret_cast<const BYTE *>(&underline),
                        sizeof(underline));
-        
+
         RegCloseKey(hKey);
     }
 }
