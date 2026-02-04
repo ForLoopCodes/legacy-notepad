@@ -71,7 +71,7 @@ void ApplyFont()
     HDC hdc = GetDC(g_hwndMain);
     int height = -MulDiv(size, GetDeviceCaps(hdc, LOGPIXELSY), 72);
     ReleaseDC(g_hwndMain, hdc);
-    g_state.hFont = CreateFontW(height, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+    g_state.hFont = CreateFontW(height, 0, 0, 0, g_state.fontWeight, g_state.fontItalic, g_state.fontUnderline, FALSE,
                                 DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
                                 FIXED_PITCH | FF_MODERN, g_state.fontName.c_str());
     SendMessageW(g_hwndEditor, WM_SETFONT, reinterpret_cast<WPARAM>(g_state.hFont), TRUE);

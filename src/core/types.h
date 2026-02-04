@@ -116,6 +116,9 @@ struct AppState
     Theme theme = Theme::System;
     int fontSize = 16;
     std::wstring fontName = L"Consolas";
+    int fontWeight = FW_NORMAL;
+    bool fontItalic = false;
+    bool fontUnderline = false;
     BYTE windowOpacity = 255;
     bool closing = false;
     HFONT hFont = nullptr;

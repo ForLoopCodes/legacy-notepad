@@ -291,7 +291,9 @@ void FormatFont()
         lf.lfHeight = -MulDiv(g_state.fontSize, GetDeviceCaps(hdc, LOGPIXELSY), 72);
         ReleaseDC(g_hwndMain, hdc);
         wcscpy_s(lf.lfFaceName, g_state.fontName.c_str());
-        lf.lfWeight = FW_NORMAL;
+        lf.lfWeight = g_state.fontWeight;
+        lf.lfItalic = g_state.fontItalic ? TRUE : FALSE;
+        lf.lfUnderline = g_state.fontUnderline ? TRUE : FALSE;
         lf.lfCharSet = DEFAULT_CHARSET;
         lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
         lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
@@ -306,6 +308,9 @@ void FormatFont()
     if (ChooseFontW(&cf))
     {
         g_state.fontName = lf.lfFaceName;
+        g_state.fontWeight = lf.lfWeight;
+        g_state.fontItalic = (lf.lfItalic != 0);
+        g_state.fontUnderline = (lf.lfUnderline != 0);
         HDC hdc2 = GetDC(g_hwndMain);
         g_state.fontSize = MulDiv(-lf.lfHeight, 72, GetDeviceCaps(hdc2, LOGPIXELSY));
         ReleaseDC(g_hwndMain, hdc2);
