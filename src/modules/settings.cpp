@@ -133,16 +133,16 @@ void LoadWindowSettings()
         DWORD size = sizeof(x);
         if (RegQueryValueExW(hKey, WINDOW_X_VALUE, nullptr, nullptr, reinterpret_cast<LPBYTE>(&x), &size) == ERROR_SUCCESS)
         {
-            // Reinterpret DWORD as signed int to correctly handle negative coordinates
-            g_state.windowX = *reinterpret_cast<int*>(&x);
+            // Cast DWORD to int - on Windows, this preserves negative coordinates correctly
+            g_state.windowX = static_cast<int>(x);
         }
 
         DWORD y = 0;
         size = sizeof(y);
         if (RegQueryValueExW(hKey, WINDOW_Y_VALUE, nullptr, nullptr, reinterpret_cast<LPBYTE>(&y), &size) == ERROR_SUCCESS)
         {
-            // Reinterpret DWORD as signed int to correctly handle negative coordinates
-            g_state.windowY = *reinterpret_cast<int*>(&y);
+            // Cast DWORD to int - on Windows, this preserves negative coordinates correctly
+            g_state.windowY = static_cast<int>(y);
         }
 
         DWORD width = 0;
@@ -184,22 +184,26 @@ void SaveWindowSettings()
     HKEY hKey;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, SETTINGS_KEY, 0, nullptr, 0, KEY_WRITE, nullptr, &hKey, nullptr) == ERROR_SUCCESS)
     {
-        // Store coordinates as REG_DWORD, preserving bit pattern for negative values
+        // Store coordinates as REG_DWORD - static_cast preserves bit pattern for negative values
+        DWORD x = static_cast<DWORD>(g_state.windowX);
         RegSetValueExW(hKey, WINDOW_X_VALUE, 0, REG_DWORD,
-                       reinterpret_cast<const BYTE *>(&g_state.windowX),
-                       sizeof(g_state.windowX));
+                       reinterpret_cast<const BYTE *>(&x),
+                       sizeof(x));
 
+        DWORD y = static_cast<DWORD>(g_state.windowY);
         RegSetValueExW(hKey, WINDOW_Y_VALUE, 0, REG_DWORD,
-                       reinterpret_cast<const BYTE *>(&g_state.windowY),
-                       sizeof(g_state.windowY));
+                       reinterpret_cast<const BYTE *>(&y),
+                       sizeof(y));
 
+        DWORD width = static_cast<DWORD>(g_state.windowWidth);
         RegSetValueExW(hKey, WINDOW_WIDTH_VALUE, 0, REG_DWORD,
-                       reinterpret_cast<const BYTE *>(&g_state.windowWidth),
-                       sizeof(g_state.windowWidth));
+                       reinterpret_cast<const BYTE *>(&width),
+                       sizeof(width));
 
+        DWORD height = static_cast<DWORD>(g_state.windowHeight);
         RegSetValueExW(hKey, WINDOW_HEIGHT_VALUE, 0, REG_DWORD,
-                       reinterpret_cast<const BYTE *>(&g_state.windowHeight),
-                       sizeof(g_state.windowHeight));
+                       reinterpret_cast<const BYTE *>(&height),
+                       sizeof(height));
 
         RegCloseKey(hKey);
     }
