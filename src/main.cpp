@@ -505,15 +505,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             wp.length = sizeof(WINDOWPLACEMENT);
             if (GetWindowPlacement(hwnd, &wp))
             {
-                if (wp.showCmd == SW_SHOWNORMAL)
-                {
-                    // Save only if window is not maximized or minimized
-                    RECT rect = wp.rcNormalPosition;
-                    g_state.windowX = rect.left;
-                    g_state.windowY = rect.top;
-                    g_state.windowWidth = rect.right - rect.left;
-                    g_state.windowHeight = rect.bottom - rect.top;
-                }
+                // Always save the normal position, even if maximized or minimized
+                RECT rect = wp.rcNormalPosition;
+                g_state.windowX = rect.left;
+                g_state.windowY = rect.top;
+                g_state.windowWidth = rect.right - rect.left;
+                g_state.windowHeight = rect.bottom - rect.top;
             }
             SaveWindowSettings();
         }

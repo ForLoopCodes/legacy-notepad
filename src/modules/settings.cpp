@@ -10,7 +10,7 @@
                           ███    ███ ▀
 
   Settings management for persisting user preferences via Windows Registry.
-  Handles font name and font size storage and retrieval.
+  Handles font settings, always on top, window size and position storage and retrieval.
 */
 
 #include "settings.h"
@@ -165,6 +165,16 @@ void LoadWindowSettings()
 
         RegCloseKey(hKey);
     }
+
+    // Validate that the window position is visible on at least one monitor
+    RECT rc = {g_state.windowX, g_state.windowY, g_state.windowX + g_state.windowWidth, g_state.windowY + g_state.windowHeight};
+    HMONITOR hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONULL);
+    if (!hMonitor)
+    {
+        // Window would be off-screen, reset to default
+        g_state.windowX = CW_USEDEFAULT;
+        g_state.windowY = CW_USEDEFAULT;
+    }
 }
 
 void SaveWindowSettings()
@@ -172,6 +182,8 @@ void SaveWindowSettings()
     HKEY hKey;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, SETTINGS_KEY, 0, nullptr, 0, KEY_WRITE, nullptr, &hKey, nullptr) == ERROR_SUCCESS)
     {
+        // REG_DWORD stores 32-bit values that can be interpreted as signed or unsigned
+        // Negative coordinates (multi-monitor setups) are preserved correctly
         DWORD x = static_cast<DWORD>(g_state.windowX);
         RegSetValueExW(hKey, WINDOW_X_VALUE, 0, REG_DWORD,
                        reinterpret_cast<const BYTE *>(&x),
