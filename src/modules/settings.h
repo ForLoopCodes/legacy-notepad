@@ -17,3 +17,5 @@
 
 void LoadFontSettings();
 void SaveFontSettings();
+void LoadWindowSettings();
+void SaveWindowSettings();
