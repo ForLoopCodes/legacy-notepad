@@ -72,6 +72,7 @@ struct LangStrings
 
     std::wstring menuHelp;
     std::wstring menuAbout;
+    std::wstring menuCheckUpdates;
 
     std::wstring menuLanguage;
     std::wstring menuLangEnglish;

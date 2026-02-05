@@ -106,6 +106,7 @@ void UpdateMenuStrings()
     HMENU hHelpMenu = GetSubMenu(hMenu, 5);
     if (hHelpMenu)
     {
+        ModifyMenuW(hHelpMenu, 0, MF_BYPOSITION | MF_STRING, IDM_HELP_CHECKUPDATES, lang.menuCheckUpdates.c_str());
         ModifyMenuW(hHelpMenu, 1, MF_BYPOSITION | MF_STRING, IDM_HELP_ABOUT, lang.menuAbout.c_str());
     }
 

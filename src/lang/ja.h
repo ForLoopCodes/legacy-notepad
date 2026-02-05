@@ -64,6 +64,7 @@ inline LangStrings g_langJA = {
 
     L"ヘルプ(&H)",
     L"メモ帳について(&A)",
+    L"更新を確認",
 
     L"言語(&L)",
     L"英語(&E)",
