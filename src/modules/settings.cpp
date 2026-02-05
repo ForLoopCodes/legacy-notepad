@@ -10,7 +10,7 @@
                           ███    ███ ▀
 
   Settings management for persisting user preferences via Windows Registry.
-  Handles font name and font size storage and retrieval.
+  Handles font settings, always on top, window size and position storage and retrieval.
 */
 
 #include "settings.h"
@@ -25,6 +25,10 @@
 #define FONT_ITALIC_VALUE L"FontItalic"
 #define FONT_UNDERLINE_VALUE L"FontUnderline"
 #define ALWAYS_ON_TOP_VALUE L"AlwaysOnTop"
+#define WINDOW_X_VALUE L"WindowX"
+#define WINDOW_Y_VALUE L"WindowY"
+#define WINDOW_WIDTH_VALUE L"WindowWidth"
+#define WINDOW_HEIGHT_VALUE L"WindowHeight"
 #define MIN_FONT_SIZE 8
 #define MAX_FONT_SIZE 72
 
@@ -115,6 +119,91 @@ void SaveFontSettings()
         RegSetValueExW(hKey, ALWAYS_ON_TOP_VALUE, 0, REG_DWORD,
                        reinterpret_cast<const BYTE *>(&top),
                        sizeof(top));
+
+        RegCloseKey(hKey);
+    }
+}
+
+void LoadWindowSettings()
+{
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, SETTINGS_KEY, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+    {
+        DWORD x = 0;
+        DWORD size = sizeof(x);
+        if (RegQueryValueExW(hKey, WINDOW_X_VALUE, nullptr, nullptr, reinterpret_cast<LPBYTE>(&x), &size) == ERROR_SUCCESS)
+        {
+            // Cast DWORD to int - on Windows, this preserves negative coordinates correctly
+            g_state.windowX = static_cast<int>(x);
+        }
+
+        DWORD y = 0;
+        size = sizeof(y);
+        if (RegQueryValueExW(hKey, WINDOW_Y_VALUE, nullptr, nullptr, reinterpret_cast<LPBYTE>(&y), &size) == ERROR_SUCCESS)
+        {
+            // Cast DWORD to int - on Windows, this preserves negative coordinates correctly
+            g_state.windowY = static_cast<int>(y);
+        }
+
+        DWORD width = 0;
+        size = sizeof(width);
+        if (RegQueryValueExW(hKey, WINDOW_WIDTH_VALUE, nullptr, nullptr, reinterpret_cast<LPBYTE>(&width), &size) == ERROR_SUCCESS)
+        {
+            if (width > 0)
+            {
+                g_state.windowWidth = static_cast<int>(width);
+            }
+        }
+
+        DWORD height = 0;
+        size = sizeof(height);
+        if (RegQueryValueExW(hKey, WINDOW_HEIGHT_VALUE, nullptr, nullptr, reinterpret_cast<LPBYTE>(&height), &size) == ERROR_SUCCESS)
+        {
+            if (height > 0)
+            {
+                g_state.windowHeight = static_cast<int>(height);
+            }
+        }
+
+        RegCloseKey(hKey);
+    }
+
+    // Validate that the window position is visible on at least one monitor
+    RECT rc = {g_state.windowX, g_state.windowY, g_state.windowX + g_state.windowWidth, g_state.windowY + g_state.windowHeight};
+    HMONITOR hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONULL);
+    if (!hMonitor)
+    {
+        // Window would be off-screen, reset to default
+        g_state.windowX = CW_USEDEFAULT;
+        g_state.windowY = CW_USEDEFAULT;
+    }
+}
+
+void SaveWindowSettings()
+{
+    HKEY hKey;
+    if (RegCreateKeyExW(HKEY_CURRENT_USER, SETTINGS_KEY, 0, nullptr, 0, KEY_WRITE, nullptr, &hKey, nullptr) == ERROR_SUCCESS)
+    {
+        // Store coordinates as REG_DWORD - static_cast preserves bit pattern for negative values
+        DWORD x = static_cast<DWORD>(g_state.windowX);
+        RegSetValueExW(hKey, WINDOW_X_VALUE, 0, REG_DWORD,
+                       reinterpret_cast<const BYTE *>(&x),
+                       sizeof(x));
+
+        DWORD y = static_cast<DWORD>(g_state.windowY);
+        RegSetValueExW(hKey, WINDOW_Y_VALUE, 0, REG_DWORD,
+                       reinterpret_cast<const BYTE *>(&y),
+                       sizeof(y));
+
+        DWORD width = static_cast<DWORD>(g_state.windowWidth);
+        RegSetValueExW(hKey, WINDOW_WIDTH_VALUE, 0, REG_DWORD,
+                       reinterpret_cast<const BYTE *>(&width),
+                       sizeof(width));
+
+        DWORD height = static_cast<DWORD>(g_state.windowHeight);
+        RegSetValueExW(hKey, WINDOW_HEIGHT_VALUE, 0, REG_DWORD,
+                       reinterpret_cast<const BYTE *>(&height),
+                       sizeof(height));
 
         RegCloseKey(hKey);
     }

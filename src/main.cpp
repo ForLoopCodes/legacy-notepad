@@ -499,6 +499,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             g_state.closing = false;
         return 0;
     case WM_DESTROY:
+        // Save window position and size before destroying
+        {
+            WINDOWPLACEMENT wp = {};
+            wp.length = sizeof(WINDOWPLACEMENT);
+            if (GetWindowPlacement(hwnd, &wp))
+            {
+                // Always save the normal position, even if maximized or minimized
+                RECT rect = wp.rcNormalPosition;
+                g_state.windowX = rect.left;
+                g_state.windowY = rect.top;
+                g_state.windowWidth = rect.right - rect.left;
+                g_state.windowHeight = rect.bottom - rect.top;
+            }
+            SaveWindowSettings();
+        }
         if (g_state.hFont)
         {
             DeleteObject(g_state.hFont);
@@ -556,6 +571,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdSh
     }
 
     LoadFontSettings();
+    LoadWindowSettings();
 
     WNDCLASSEXW wc = {};
     wc.cbSize = sizeof(wc);
@@ -578,7 +594,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdSh
     const auto &lang = GetLangStrings();
     std::wstring initialTitle = lang.untitled + L" - " + lang.appName;
     g_hwndMain = CreateWindowExW(0, L"NotepadClass", initialTitle.c_str(),
-                                 WS_OVERLAPPEDWINDOW | WS_MAXIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 640, 480,
+                                 WS_OVERLAPPEDWINDOW | WS_MAXIMIZEBOX, g_state.windowX, g_state.windowY, g_state.windowWidth, g_state.windowHeight,
                                  nullptr, nullptr, hInstance, nullptr);
     g_hAccel = LoadAcceleratorsW(hInstance, MAKEINTRESOURCEW(IDR_ACCEL));
     ShowWindow(g_hwndMain, nCmdShow);
