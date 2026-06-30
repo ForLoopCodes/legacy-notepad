@@ -6,7 +6,8 @@
 enum class LangID
 {
     EN,
-    JA
+    JA,
+    ZH_TW
 };
 
 struct LangStrings
@@ -69,6 +70,9 @@ struct LangStrings
     std::wstring menuBgPosFill;
     std::wstring menuTransparency;
     std::wstring menuAlwaysOnTop;
+    std::wstring menuIcon;
+    std::wstring menuIconChange;
+    std::wstring menuIconReset;
 
     std::wstring menuHelp;
     std::wstring menuAbout;
@@ -77,6 +81,7 @@ struct LangStrings
     std::wstring menuLanguage;
     std::wstring menuLangEnglish;
     std::wstring menuLangJapanese;
+    std::wstring menuLangTraditionalChinese;
 
     std::wstring dialogFind;
     std::wstring dialogFindReplace;

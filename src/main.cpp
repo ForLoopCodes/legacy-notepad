@@ -68,9 +68,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 return -1;
             }
         }
+
+        DWORD editorStyle = WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | ES_NOHIDESEL;
+        if (!g_state.wordWrap)
+            editorStyle |= WS_HSCROLL | ES_AUTOHSCROLL;
+
         g_hwndEditor = CreateWindowExW(0, richEditClass, nullptr,
-                                       WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | ES_NOHIDESEL,
-                                       0, 0, 100, 100, hwnd, reinterpret_cast<HMENU>(IDC_EDITOR), GetModuleHandleW(nullptr), nullptr);
+                                       editorStyle, 0, 0, 100, 100, hwnd, reinterpret_cast<HMENU>(IDC_EDITOR), GetModuleHandleW(nullptr), nullptr);
         g_origEditorProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_hwndEditor, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(EditorSubclassProc)));
         g_hwndStatus = CreateWindowExW(0, STATUSCLASSNAMEW, nullptr,
                                        WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwnd, reinterpret_cast<HMENU>(IDC_STATUSBAR), GetModuleHandleW(nullptr), nullptr);
@@ -81,6 +85,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         SetupStatusBarParts();
         UpdateMenuStrings();
         UpdateLanguageMenu();
+        CheckMenuItem(GetMenu(g_hwndMain), IDM_FORMAT_WORDWRAP, g_state.wordWrap ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(g_hwndMain), IDM_VIEW_ALWAYSONTOP, g_state.alwaysOnTop ? MF_CHECKED : MF_UNCHECKED);
         if (g_state.alwaysOnTop)
             SetWindowPos(g_hwndMain, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
@@ -437,6 +442,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 g_hwndFindDlg = nullptr;
             }
             SetLanguage(LangID::JA);
+            UpdateMenuStrings();
+            UpdateLanguageMenu();
+            UpdateTitle();
+            UpdateStatus();
+            break;
+        case IDM_VIEW_LANG_ZH_TW:
+            if (g_hwndFindDlg)
+            {
+                DestroyWindow(g_hwndFindDlg);
+                g_hwndFindDlg = nullptr;
+            }
+            SetLanguage(LangID::ZH_TW);
             UpdateMenuStrings();
             UpdateLanguageMenu();
             UpdateTitle();

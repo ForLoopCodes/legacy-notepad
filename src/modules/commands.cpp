@@ -24,6 +24,7 @@
 #include <commdlg.h>
 #include <shlwapi.h>
 #include <shellapi.h>
+#include <richedit.h>
 #include <vector>
 
 static HICON LoadCustomIcon(const wchar_t *path)
@@ -199,7 +200,7 @@ void FilePageSetup()
 }
 
 void EditUndo() { SendMessageW(g_hwndEditor, EM_UNDO, 0, 0); }
-void EditRedo() { SendMessageW(g_hwndEditor, EM_UNDO, 0, 0); }
+void EditRedo() { SendMessageW(g_hwndEditor, EM_REDO, 0, 0); }
 void EditCut() { SendMessageW(g_hwndEditor, WM_CUT, 0, 0); }
 void EditCopy() { SendMessageW(g_hwndEditor, WM_COPY, 0, 0); }
 void EditPaste() { SendMessageW(g_hwndEditor, WM_PASTE, 0, 0); }
@@ -221,6 +222,7 @@ void FormatWordWrap()
 {
     g_state.wordWrap = !g_state.wordWrap;
     CheckMenuItem(GetMenu(g_hwndMain), IDM_FORMAT_WORDWRAP, g_state.wordWrap ? MF_CHECKED : MF_UNCHECKED);
+    SaveFontSettings();
     ApplyWordWrap();
 }
 

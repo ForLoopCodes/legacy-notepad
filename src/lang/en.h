@@ -61,6 +61,9 @@ inline LangStrings g_langEN = {
     L"Fill",
     L"Window &Transparency...",
     L"Always on &Top",
+    L"&Icon",
+    L"&Change Icon...",
+    L"&Reset to Default",
 
     L"&Help",
     L"&About Notepad",
@@ -68,7 +71,8 @@ inline LangStrings g_langEN = {
 
     L"&Language",
     L"&English",
-    L"&Japanese",
+    L"日本語(&J)",
+    L"繁體中文(&T)",
 
     L"Find",
     L"Find and Replace",
@@ -90,7 +94,7 @@ inline LangStrings g_langEN = {
     L"Cannot open file.",
     L"Cannot save file.",
     L"Error",
-    L"Legacy Notepad v1.2.0\n\nA fast, lightweight text editor.\n\nBuilt with C++ and Win32 API.\n", //\nModify by 0x2o.net",
+    L"Legacy Notepad v1.2.0.1\n\nA fast, lightweight text editor.\n\nBuilt with C++ and Win32 API.\n", //\nModify by 0x2o.net",
 
     L" Ln ",
     L", Col ",

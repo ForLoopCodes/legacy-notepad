@@ -25,6 +25,7 @@
 #define FONT_ITALIC_VALUE L"FontItalic"
 #define FONT_UNDERLINE_VALUE L"FontUnderline"
 #define ALWAYS_ON_TOP_VALUE L"AlwaysOnTop"
+#define WORD_WRAP_VALUE L"WordWrap"
 #define WINDOW_X_VALUE L"WindowX"
 #define WINDOW_Y_VALUE L"WindowY"
 #define WINDOW_WIDTH_VALUE L"WindowWidth"
@@ -82,6 +83,13 @@ void LoadFontSettings()
             g_state.alwaysOnTop = (top != 0);
         }
 
+        DWORD wrap = 0;
+        size = sizeof(wrap);
+        if (RegQueryValueExW(hKey, WORD_WRAP_VALUE, nullptr, nullptr, reinterpret_cast<LPBYTE>(&wrap), &size) == ERROR_SUCCESS)
+        {
+            g_state.wordWrap = (wrap != 0);
+        }
+
         RegCloseKey(hKey);
     }
 }
@@ -119,6 +127,11 @@ void SaveFontSettings()
         RegSetValueExW(hKey, ALWAYS_ON_TOP_VALUE, 0, REG_DWORD,
                        reinterpret_cast<const BYTE *>(&top),
                        sizeof(top));
+
+        DWORD wrap = g_state.wordWrap ? 1 : 0;
+        RegSetValueExW(hKey, WORD_WRAP_VALUE, 0, REG_DWORD,
+                       reinterpret_cast<const BYTE *>(&wrap),
+                       sizeof(wrap));
 
         RegCloseKey(hKey);
     }

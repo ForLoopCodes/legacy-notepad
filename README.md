@@ -11,7 +11,7 @@ A lightweight, 25x fast, Windows notepad alternative built with C++17 and Win32 
 
 ## Features
 
-- **Multi-language support**: English and Japanese translations with runtime switching.
+- **Multi-language support**: English, Japanese, and Traditional Chinese translations with runtime switching.
 - **Multi-encoding text**: UTF-8, UTF-8 BOM, UTF-16 LE/BE, ANSI with line-ending selection.
 - **Rich editing**: word wrap toggle, font selection, zoom, time/date stamp, find/replace/goto.
 - **Backgrounds**: optional image with tile/stretch/fit/fill/anchor modes and opacity control. (known issues)

@@ -94,6 +94,14 @@ void UpdateMenuStrings()
 
         ModifyMenuW(hViewMenu, 9, MF_BYPOSITION | MF_STRING, IDM_VIEW_TRANSPARENCY, lang.menuTransparency.c_str());
         ModifyMenuW(hViewMenu, 10, MF_BYPOSITION | MF_STRING, IDM_VIEW_ALWAYSONTOP, lang.menuAlwaysOnTop.c_str());
+
+        HMENU hIconMenu = GetSubMenu(hViewMenu, 12);
+        if (hIconMenu)
+        {
+            ModifyMenuW(hViewMenu, 12, MF_BYPOSITION | MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(hIconMenu), lang.menuIcon.c_str());
+            ModifyMenuW(hIconMenu, 0, MF_BYPOSITION | MF_STRING, IDM_VIEW_ICON_CHANGE, lang.menuIconChange.c_str());
+            ModifyMenuW(hIconMenu, 1, MF_BYPOSITION | MF_STRING, IDM_VIEW_ICON_RESET, lang.menuIconReset.c_str());
+        }
     }
 
     HMENU hLangMenu = GetSubMenu(hMenu, 4);
@@ -101,6 +109,7 @@ void UpdateMenuStrings()
     {
         ModifyMenuW(hLangMenu, 0, MF_BYPOSITION | MF_STRING, IDM_VIEW_LANG_EN, lang.menuLangEnglish.c_str());
         ModifyMenuW(hLangMenu, 1, MF_BYPOSITION | MF_STRING, IDM_VIEW_LANG_JA, lang.menuLangJapanese.c_str());
+        ModifyMenuW(hLangMenu, 2, MF_BYPOSITION | MF_STRING, IDM_VIEW_LANG_ZH_TW, lang.menuLangTraditionalChinese.c_str());
     }
 
     HMENU hHelpMenu = GetSubMenu(hMenu, 5);
@@ -126,4 +135,5 @@ void UpdateLanguageMenu()
     LangID currentLang = GetCurrentLanguage();
     CheckMenuItem(hLangMenu, IDM_VIEW_LANG_EN, (currentLang == LangID::EN) ? MF_CHECKED : MF_UNCHECKED);
     CheckMenuItem(hLangMenu, IDM_VIEW_LANG_JA, (currentLang == LangID::JA) ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(hLangMenu, IDM_VIEW_LANG_ZH_TW, (currentLang == LangID::ZH_TW) ? MF_CHECKED : MF_UNCHECKED);
 }

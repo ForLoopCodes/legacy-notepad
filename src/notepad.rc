@@ -90,6 +90,7 @@ BEGIN
     BEGIN
         MENUITEM "&English", IDM_VIEW_LANG_EN
         MENUITEM "&Japanese", IDM_VIEW_LANG_JA
+        MENUITEM "&Traditional Chinese", IDM_VIEW_LANG_ZH_TW
     END
     POPUP "&Help"
     BEGIN

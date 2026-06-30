@@ -61,6 +61,9 @@ inline LangStrings g_langJA = {
     L"フィル",
     L"ウィンドウの透明度(&T)...",
     L"常に最前面に表示(&T)",
+    L"アイコン(&I)",
+    L"アイコンを変更(&C)...",
+    L"既定に戻す(&R)",
 
     L"ヘルプ(&H)",
     L"メモ帳について(&A)",
@@ -69,6 +72,7 @@ inline LangStrings g_langJA = {
     L"言語(&L)",
     L"英語(&E)",
     L"日本語(&J)",
+    L"繁體中文(&T)",
 
     L"検索",
     L"検索と置換",
@@ -90,7 +94,7 @@ inline LangStrings g_langJA = {
     L"ファイルを開けません。",
     L"ファイルを保存できません。",
     L"エラー",
-    L"Legacy Notepad v1.2.0\n\n高速で軽量なテキストエディタ。\n\nC++ Win32 API で構築。\n", //\nModify by 0x2o.net",
+    L"Legacy Notepad v1.2.0.1\n\n高速で軽量なテキストエディタ。\n\nC++ Win32 API で構築。\n", //\nModify by 0x2o.net",
 
     L" 行 ",
     L", 列 ",
