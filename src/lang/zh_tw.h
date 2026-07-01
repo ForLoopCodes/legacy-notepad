@@ -94,7 +94,7 @@ inline LangStrings g_langZHTW = {
     L"無法開啟檔案。",
     L"無法儲存檔案。",
     L"錯誤",
-    L"Legacy Notepad v1.2.0.1\n\n快速、輕量的文字編輯器。\n\n使用 C++ 與 Win32 API 建置。\n",
+    L"Legacy Notepad v1.2.0\n\n快速、輕量的文字編輯器。\n\n使用 C++ 與 Win32 API 建置。\n",
 
     L" 第 ",
     L" 行，第 ",

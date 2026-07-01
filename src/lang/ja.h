@@ -94,7 +94,7 @@ inline LangStrings g_langJA = {
     L"ファイルを開けません。",
     L"ファイルを保存できません。",
     L"エラー",
-    L"Legacy Notepad v1.2.0.1\n\n高速で軽量なテキストエディタ。\n\nC++ Win32 API で構築。\n", //\nModify by 0x2o.net",
+    L"Legacy Notepad v1.2.0\n\n高速で軽量なテキストエディタ。\n\nC++ Win32 API で構築。\n", //\nModify by 0x2o.net",
 
     L" 行 ",
     L", 列 ",
