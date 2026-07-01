@@ -123,7 +123,7 @@ void ApplyWordWrap()
     DWORD start = 0, end = 0;
     SendMessageW(g_hwndEditor, EM_GETSEL, reinterpret_cast<WPARAM>(&start), reinterpret_cast<LPARAM>(&end));
     DestroyWindow(g_hwndEditor);
-    DWORD style = WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_WANTRETURN | ES_NOHIDESEL;
+    DWORD style = WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | ES_NOHIDESEL;
     if (!g_state.wordWrap)
         style |= WS_HSCROLL | ES_AUTOHSCROLL;
     g_hwndEditor = CreateWindowExW(0, MSFTEDIT_CLASS, nullptr, style,

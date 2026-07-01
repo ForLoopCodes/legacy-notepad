@@ -1,6 +1,7 @@
 #include "lang.h"
 #include "en.h"
 #include "ja.h"
+#include "zh_tw.h"
 #include <windows.h>
 
 static LangID g_currentLang = LangID::EN;
@@ -48,6 +49,9 @@ void SetLanguage(LangID lang)
     {
     case LangID::JA:
         g_currentStrings = &g_langJA;
+        break;
+    case LangID::ZH_TW:
+        g_currentStrings = &g_langZHTW;
         break;
     case LangID::EN:
     default:

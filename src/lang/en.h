@@ -61,6 +61,9 @@ inline LangStrings g_langEN = {
     L"Fill",
     L"Window &Transparency...",
     L"Always on &Top",
+    L"&Icon",
+    L"&Change Icon...",
+    L"&Reset to Default",
 
     L"&Help",
     L"&About Notepad",
@@ -68,7 +71,8 @@ inline LangStrings g_langEN = {
 
     L"&Language",
     L"&English",
-    L"&Japanese",
+    L"日本語(&J)",
+    L"繁體中文(&T)",
 
     L"Find",
     L"Find and Replace",
