@@ -327,12 +327,45 @@ INT_PTR CALLBACK FindDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
     return DefDlgProcW(hDlg, msg, wParam, lParam);
 }
 
+static std::wstring GetControlText(HWND hwnd)
+{
+    int length = GetWindowTextLengthW(hwnd);
+    std::wstring text(static_cast<size_t>(length) + 1, L'\0');
+    int copied = GetWindowTextW(hwnd, text.data(), length + 1);
+    text.resize(static_cast<size_t>(copied));
+    return text;
+}
+
+static void SaveFindDialogText(HWND hDlg)
+{
+    HWND hFindEdit = GetDlgItem(hDlg, 1001);
+    if (hFindEdit)
+        g_state.findText = GetControlText(hFindEdit);
+
+    HWND hReplaceEdit = GetDlgItem(hDlg, 1002);
+    if (hReplaceEdit)
+        g_state.replaceText = GetControlText(hReplaceEdit);
+}
+
+static void FocusFindDialogInput(HWND hDlg)
+{
+    HWND hFindEdit = GetDlgItem(hDlg, 1001);
+    SetFocus(hFindEdit ? hFindEdit : hDlg);
+}
 void EditFind()
 {
     if (g_hwndFindDlg)
     {
-        SetFocus(g_hwndFindDlg);
-        return;
+        bool isReplaceDialog = GetDlgItem(g_hwndFindDlg, 1002) != nullptr;
+        if (!isReplaceDialog)
+        {
+            FocusFindDialogInput(g_hwndFindDlg);
+            return;
+        }
+
+        SaveFindDialogText(g_hwndFindDlg);
+        DestroyWindow(g_hwndFindDlg);
+        g_hwndFindDlg = nullptr;
     }
     const auto &lang = GetLangStrings();
     g_hwndFindDlg = CreateWindowExW(WS_EX_DLGMODALFRAME, L"#32770", lang.dialogFind.c_str(),
@@ -342,15 +375,16 @@ void EditFind()
     {
         HFONT hFont = reinterpret_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
         CreateWindowExW(0, L"STATIC", lang.dialogFindLabel.c_str(), WS_CHILD | WS_VISIBLE, 10, 12, 45, 16, g_hwndFindDlg, nullptr, nullptr, nullptr);
-        CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", g_state.findText.c_str(), WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 60, 10, 230, 20, g_hwndFindDlg, reinterpret_cast<HMENU>(1001), nullptr, nullptr);
-        CreateWindowExW(0, L"BUTTON", lang.dialogFindNext.c_str(), WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 300, 10, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(1), nullptr, nullptr);
-        CreateWindowExW(0, L"BUTTON", lang.dialogClose.c_str(), WS_CHILD | WS_VISIBLE, 300, 38, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(2), nullptr, nullptr);
+        CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", g_state.findText.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL, 60, 10, 230, 20, g_hwndFindDlg, reinterpret_cast<HMENU>(1001), nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", lang.dialogFindNext.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON, 300, 10, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(1), nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", lang.dialogClose.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, 300, 38, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(2), nullptr, nullptr);
         for (HWND h = GetWindow(g_hwndFindDlg, GW_CHILD); h; h = GetWindow(h, GW_HWNDNEXT))
             SendMessageW(h, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
         SetWindowLongPtrW(g_hwndFindDlg, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(FindDlgProc));
         ApplyDialogDarkMode(g_hwndFindDlg);
         InvalidateRect(g_hwndFindDlg, nullptr, FALSE);
         UpdateWindow(g_hwndFindDlg);
+        FocusFindDialogInput(g_hwndFindDlg);
     }
 }
 
@@ -370,8 +404,16 @@ void EditReplace()
 {
     if (g_hwndFindDlg)
     {
-        SetFocus(g_hwndFindDlg);
-        return;
+        bool isReplaceDialog = GetDlgItem(g_hwndFindDlg, 1002) != nullptr;
+        if (isReplaceDialog)
+        {
+            FocusFindDialogInput(g_hwndFindDlg);
+            return;
+        }
+
+        SaveFindDialogText(g_hwndFindDlg);
+        DestroyWindow(g_hwndFindDlg);
+        g_hwndFindDlg = nullptr;
     }
     const auto &lang = GetLangStrings();
     g_hwndFindDlg = CreateWindowExW(WS_EX_DLGMODALFRAME, L"#32770", lang.dialogFindReplace.c_str(),
@@ -381,19 +423,20 @@ void EditReplace()
     {
         HFONT hFont = reinterpret_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
         CreateWindowExW(0, L"STATIC", lang.dialogFindLabel.c_str(), WS_CHILD | WS_VISIBLE, 10, 12, 45, 16, g_hwndFindDlg, nullptr, nullptr, nullptr);
-        CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", g_state.findText.c_str(), WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 60, 10, 230, 20, g_hwndFindDlg, reinterpret_cast<HMENU>(1001), nullptr, nullptr);
+        CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", g_state.findText.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL, 60, 10, 230, 20, g_hwndFindDlg, reinterpret_cast<HMENU>(1001), nullptr, nullptr);
         CreateWindowExW(0, L"STATIC", lang.dialogReplaceLabel.c_str(), WS_CHILD | WS_VISIBLE, 10, 40, 50, 16, g_hwndFindDlg, nullptr, nullptr, nullptr);
-        CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", g_state.replaceText.c_str(), WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 60, 38, 230, 20, g_hwndFindDlg, reinterpret_cast<HMENU>(1002), nullptr, nullptr);
-        CreateWindowExW(0, L"BUTTON", lang.dialogFindNext.c_str(), WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 300, 10, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(1), nullptr, nullptr);
-        CreateWindowExW(0, L"BUTTON", lang.dialogReplace.c_str(), WS_CHILD | WS_VISIBLE, 300, 38, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(3), nullptr, nullptr);
-        CreateWindowExW(0, L"BUTTON", lang.dialogReplaceAll.c_str(), WS_CHILD | WS_VISIBLE, 300, 66, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(4), nullptr, nullptr);
-        CreateWindowExW(0, L"BUTTON", lang.dialogClose.c_str(), WS_CHILD | WS_VISIBLE, 300, 94, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(2), nullptr, nullptr);
+        CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", g_state.replaceText.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL, 60, 38, 230, 20, g_hwndFindDlg, reinterpret_cast<HMENU>(1002), nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", lang.dialogFindNext.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON, 300, 10, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(1), nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", lang.dialogReplace.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, 300, 38, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(3), nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", lang.dialogReplaceAll.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, 300, 66, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(4), nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", lang.dialogClose.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP, 300, 94, 100, 22, g_hwndFindDlg, reinterpret_cast<HMENU>(2), nullptr, nullptr);
         for (HWND h = GetWindow(g_hwndFindDlg, GW_CHILD); h; h = GetWindow(h, GW_HWNDNEXT))
             SendMessageW(h, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
         SetWindowLongPtrW(g_hwndFindDlg, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(FindDlgProc));
         ApplyDialogDarkMode(g_hwndFindDlg);
         InvalidateRect(g_hwndFindDlg, nullptr, FALSE);
         UpdateWindow(g_hwndFindDlg);
+        FocusFindDialogInput(g_hwndFindDlg);
     }
 }
 
