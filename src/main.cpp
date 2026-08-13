@@ -609,6 +609,38 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdSh
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0))
     {
+        if (g_hwndFindDlg &&
+            msg.message == WM_KEYDOWN &&
+            (GetKeyState(VK_CONTROL) & 0x8000) &&
+            !(GetKeyState(VK_SHIFT) & 0x8000) &&
+            !(GetKeyState(VK_MENU) & 0x8000))
+        {
+            if (msg.wParam == L'F')
+            {
+                SendMessageW(g_hwndMain, WM_COMMAND, MAKEWPARAM(IDM_EDIT_FIND, 0), 0);
+                continue;
+            }
+
+            if (msg.wParam == L'H')
+            {
+                SendMessageW(g_hwndMain, WM_COMMAND, MAKEWPARAM(IDM_EDIT_REPLACE, 0), 0);
+                continue;
+            }
+
+            if (msg.wParam == L'A')
+            {
+                HWND hFocus = GetFocus();
+                HWND hFindEdit = GetDlgItem(g_hwndFindDlg, 1001);
+                HWND hReplaceEdit = GetDlgItem(g_hwndFindDlg, 1002);
+
+                if (hFocus == hFindEdit || hFocus == hReplaceEdit)
+                {
+                    SendMessageW(hFocus, EM_SETSEL, 0, -1);
+                    continue;
+                }
+            }
+        }
+
         if (g_hwndFindDlg && IsDialogMessageW(g_hwndFindDlg, &msg))
             continue;
         if (!TranslateAcceleratorW(g_hwndMain, g_hAccel, &msg))
