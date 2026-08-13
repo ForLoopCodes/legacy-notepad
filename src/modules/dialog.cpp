@@ -327,24 +327,24 @@ INT_PTR CALLBACK FindDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
     return DefDlgProcW(hDlg, msg, wParam, lParam);
 }
 
+static std::wstring GetControlText(HWND hwnd)
+{
+    int length = GetWindowTextLengthW(hwnd);
+    std::wstring text(static_cast<size_t>(length) + 1, L'\0');
+    int copied = GetWindowTextW(hwnd, text.data(), length + 1);
+    text.resize(static_cast<size_t>(copied));
+    return text;
+}
+
 static void SaveFindDialogText(HWND hDlg)
 {
-    wchar_t buf[256] = {0};
-
     HWND hFindEdit = GetDlgItem(hDlg, 1001);
     if (hFindEdit)
-    {
-        GetWindowTextW(hFindEdit, buf, 256);
-        g_state.findText = buf;
-    }
+        g_state.findText = GetControlText(hFindEdit);
 
     HWND hReplaceEdit = GetDlgItem(hDlg, 1002);
     if (hReplaceEdit)
-    {
-        buf[0] = L'\0';
-        GetWindowTextW(hReplaceEdit, buf, 256);
-        g_state.replaceText = buf;
-    }
+        g_state.replaceText = GetControlText(hReplaceEdit);
 }
 
 static void FocusFindDialogInput(HWND hDlg)
