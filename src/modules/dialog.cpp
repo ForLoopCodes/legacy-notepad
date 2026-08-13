@@ -246,8 +246,10 @@ INT_PTR CALLBACK FindDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
             SendMessageW(g_hwndEditor, EM_GETSEL, reinterpret_cast<WPARAM>(&start), reinterpret_cast<LPARAM>(&end));
             if (start != end)
             {
-                std::wstring text = GetEditorText();
-                std::wstring sel = text.substr(start, end - start);
+                std::wstring sel(static_cast<size_t>(end - start) + 1, L'\0');
+                LRESULT copied = SendMessageW(g_hwndEditor, EM_GETSELTEXT, 0, reinterpret_cast<LPARAM>(sel.data()));
+                if (copied >= 0)
+                    sel.resize(static_cast<size_t>(copied));
                 std::transform(sel.begin(), sel.end(), sel.begin(), towlower);
                 std::wstring findLower = g_state.findText;
                 std::transform(findLower.begin(), findLower.end(), findLower.begin(), towlower);
@@ -273,11 +275,19 @@ INT_PTR CALLBACK FindDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
             std::transform(lower.begin(), lower.end(), lower.begin(), towlower);
             std::wstring newText;
             size_t lastPos = 0, pos = 0;
+            size_t matchCount = 0;
             while ((pos = lower.find(findLower, lastPos)) != std::wstring::npos)
             {
                 newText += text.substr(lastPos, pos - lastPos);
                 newText += g_state.replaceText;
                 lastPos = pos + g_state.findText.size();
+                ++matchCount;
+            }
+            if (matchCount == 0)
+            {
+                const auto &lang = GetLangStrings();
+                MessageBoxW(g_hwndMain, (lang.msgCannotFind + g_state.findText + L"\"").c_str(), lang.appName.c_str(), MB_ICONINFORMATION);
+                return TRUE;
             }
             newText += text.substr(lastPos);
             if (newText != text)
