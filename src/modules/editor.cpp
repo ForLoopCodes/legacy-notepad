@@ -180,6 +180,48 @@ void DeleteWordForward()
     SendMessageW(g_hwndEditor, EM_REPLACESEL, TRUE, reinterpret_cast<LPARAM>(L""));
 }
 
+static bool PastePlainTextFromClipboard(HWND hwnd)
+{
+    if (!OpenClipboard(hwnd))
+        return false;
+
+    bool pasted = false;
+
+    HANDLE hUnicodeData = GetClipboardData(CF_UNICODETEXT);
+    if (hUnicodeData)
+    {
+        if (const wchar_t *clipText = static_cast<const wchar_t *>(GlobalLock(hUnicodeData)))
+        {
+            SendMessageW(hwnd, EM_REPLACESEL, TRUE, reinterpret_cast<LPARAM>(clipText));
+            GlobalUnlock(hUnicodeData);
+            pasted = true;
+        }
+    }
+    else
+    {
+        HANDLE hTextData = GetClipboardData(CF_TEXT);
+        if (hTextData)
+        {
+            if (const char *clipText = static_cast<const char *>(GlobalLock(hTextData)))
+            {
+                int len = MultiByteToWideChar(CP_ACP, 0, clipText, -1, nullptr, 0);
+                if (len > 0)
+                {
+                    std::wstring wideText(static_cast<size_t>(len), L'\0');
+                    MultiByteToWideChar(CP_ACP, 0, clipText, -1, wideText.data(), len);
+                    if (!wideText.empty() && wideText.back() == L'\0')
+                        wideText.pop_back();
+                    SendMessageW(hwnd, EM_REPLACESEL, TRUE, reinterpret_cast<LPARAM>(wideText.c_str()));
+                    pasted = true;
+                }
+                GlobalUnlock(hTextData);
+            }
+        }
+    }
+
+    CloseClipboard();
+    return pasted;
+}
 LRESULT CALLBACK EditorSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
@@ -209,6 +251,14 @@ LRESULT CALLBACK EditorSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             g_bgBitmap = nullptr;
         }
         break;
+    case WM_PASTE:
+        if (PastePlainTextFromClipboard(hwnd))
+        {
+            if (g_state.background.enabled && g_bgImage)
+                InvalidateRect(hwnd, nullptr, TRUE);
+            return 0;
+        }
+        return 0;
     case WM_CHAR:
         if (wParam == 3)
             break;
