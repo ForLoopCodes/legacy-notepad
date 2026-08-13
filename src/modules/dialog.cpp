@@ -173,39 +173,56 @@ void DoFind(bool forward)
 {
     if (g_state.findText.empty())
         return;
-    std::wstring text = GetEditorText();
+
     DWORD start = 0, end = 0;
     SendMessageW(g_hwndEditor, EM_GETSEL, reinterpret_cast<WPARAM>(&start), reinterpret_cast<LPARAM>(&end));
-    std::wstring textLower = text;
-    std::transform(textLower.begin(), textLower.end(), textLower.begin(), towlower);
-    std::wstring findLower = g_state.findText;
-    std::transform(findLower.begin(), findLower.end(), findLower.begin(), towlower);
-    size_t pos = std::wstring::npos;
+
+    auto showNotFound = []()
+    {
+        const auto &lang = GetLangStrings();
+        MessageBoxW(g_hwndMain, (lang.msgCannotFind + g_state.findText + L"\"").c_str(), lang.appName.c_str(), MB_ICONINFORMATION);
+    };
+
+    auto findInRange = [](LONG cpMin, LONG cpMax, DWORD flags, FINDTEXTEXW &findText) -> bool
+    {
+        findText.chrg.cpMin = cpMin;
+        findText.chrg.cpMax = cpMax;
+        findText.chrgText.cpMin = 0;
+        findText.chrgText.cpMax = 0;
+        return SendMessageW(g_hwndEditor, EM_FINDTEXTEXW, flags, reinterpret_cast<LPARAM>(&findText)) != -1;
+    };
+
+    FINDTEXTEXW findText = {};
+    findText.lpstrText = const_cast<LPWSTR>(g_state.findText.c_str());
+
+    bool found = false;
+
     if (forward)
     {
-        pos = textLower.find(findLower, end);
-        if (pos == std::wstring::npos)
-            pos = textLower.find(findLower);
+        found = findInRange(static_cast<LONG>(end), -1, FR_DOWN, findText);
+        if (!found && end > 0)
+            found = findInRange(0, static_cast<LONG>(end), FR_DOWN, findText);
     }
     else
     {
-        if (start > 0)
-            pos = textLower.rfind(findLower, start - 1);
-        if (pos == std::wstring::npos)
-            pos = textLower.rfind(findLower);
+        LONG textLength = static_cast<LONG>(SendMessageW(g_hwndEditor, WM_GETTEXTLENGTH, 0, 0));
+        LONG searchStart = (start > 0) ? static_cast<LONG>(start - 1) : textLength;
+
+        found = findInRange(searchStart, 0, 0, findText);
+        if (!found && start > 0)
+            found = findInRange(textLength, 0, 0, findText);
     }
-    if (pos != std::wstring::npos)
+
+    if (found)
     {
-        SendMessageW(g_hwndEditor, EM_SETSEL, pos, pos + g_state.findText.size());
+        SendMessageW(g_hwndEditor, EM_SETSEL, findText.chrgText.cpMin, findText.chrgText.cpMax);
         SendMessageW(g_hwndEditor, EM_SCROLLCARET, 0, 0);
     }
     else
     {
-        const auto &lang = GetLangStrings();
-        MessageBoxW(g_hwndMain, (lang.msgCannotFind + g_state.findText + L"\"").c_str(), lang.appName.c_str(), MB_ICONINFORMATION);
+        showNotFound();
     }
 }
-
 INT_PTR CALLBACK FindDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
