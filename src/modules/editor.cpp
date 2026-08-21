@@ -255,9 +255,10 @@ LRESULT CALLBACK EditorSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         break;
     case WM_MOUSEWHEEL:
     {
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+
         if (LOWORD(wParam) & MK_SHIFT)
         {
-            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
             UINT scrollLines = 3;
             SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &scrollLines, 0);
             if (scrollLines == (UINT)WHEEL_PAGESCROLL)
@@ -271,7 +272,31 @@ LRESULT CALLBACK EditorSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             }
             return 0;
         }
-        break;
+
+        static int wheelDeltaRemainder = 0;
+        wheelDeltaRemainder += delta;
+
+        UINT scrollLines = 3;
+        SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &scrollLines, 0);
+
+        while (wheelDeltaRemainder >= WHEEL_DELTA || wheelDeltaRemainder <= -WHEEL_DELTA)
+        {
+            bool scrollUp = wheelDeltaRemainder > 0;
+
+            if (scrollLines == (UINT)WHEEL_PAGESCROLL)
+            {
+                SendMessageW(hwnd, WM_VSCROLL, scrollUp ? SB_PAGEUP : SB_PAGEDOWN, 0);
+            }
+            else
+            {
+                for (UINT i = 0; i < scrollLines; ++i)
+                    SendMessageW(hwnd, WM_VSCROLL, scrollUp ? SB_LINEUP : SB_LINEDOWN, 0);
+            }
+
+            wheelDeltaRemainder += scrollUp ? -WHEEL_DELTA : WHEEL_DELTA;
+        }
+
+        return 0;
     }
     case WM_MOUSEHWHEEL:
     {
